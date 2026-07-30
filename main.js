@@ -267,6 +267,32 @@ ipcMain.handle("ai:image", async (_event, prompt) => {
   }
 });
 
+function runPs(script, timeoutMs = 20000) {
+  return new Promise((resolve) => {
+    let output = "";
+    let child;
+    try {
+      child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true
+      });
+    } catch (error) {
+      resolve({ ok: false, error: String(error?.message || error) });
+      return;
+    }
+    const timer = setTimeout(() => { try { child.kill(); } catch {} }, timeoutMs);
+    child.stdout.on("data", (chunk) => { output += chunk.toString(); });
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      resolve({ ok: false, error: String(error?.message || error) });
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({ ok: code === 0, output: output.trim(), error: code === 0 ? null : `exit code ${code}` });
+    });
+  });
+}
+
 const APP_COMMANDS = {
   notepad: ["notepad.exe"],
   calculator: ["calc.exe"],
@@ -321,11 +347,68 @@ ipcMain.handle("os:action", async (_event, action) => {
       await shell.openExternal(url);
       return { ok: true, detail: url };
     }
+    if (action.type === "system") {
+      return runSystemCommand(action);
+    }
     return { ok: false, error: "unknown action" };
   } catch (error) {
     return { ok: false, error: String(error?.message || error) };
   }
 });
+
+async function runSystemCommand(action) {
+  const name = action.name;
+  if (name === "volume-up" || name === "volume-down") {
+    const key = name === "volume-up" ? 175 : 174;
+    const result = await runPs(`$w = New-Object -ComObject WScript.Shell; 1..5 | ForEach-Object { $w.SendKeys([char]${key}) }`);
+    return result.ok ? { ok: true, detail: name.replace("-", " ") } : { ok: false, error: result.error };
+  }
+  if (name === "mute") {
+    const result = await runPs("$w = New-Object -ComObject WScript.Shell; $w.SendKeys([char]173)");
+    return result.ok ? { ok: true, detail: "mute toggled" } : { ok: false, error: result.error };
+  }
+  if (name === "lock") {
+    const child = spawn("rundll32.exe", ["user32.dll,LockWorkStation"], { detached: true, stdio: "ignore" });
+    child.unref();
+    return { ok: true, detail: "locking" };
+  }
+  if (name === "screenshot") {
+    const dir = path.join(app.getPath("pictures"), "ZENO Screenshots");
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, `shot-${Date.now()}.png`);
+    const script = [
+      "Add-Type -AssemblyName System.Windows.Forms",
+      "Add-Type -AssemblyName System.Drawing",
+      "$b = [System.Windows.Forms.SystemInformation]::VirtualScreen",
+      "$bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height",
+      "$g = [System.Drawing.Graphics]::FromImage($bmp)",
+      "$g.CopyFromScreen($b.Left, $b.Top, 0, 0, $bmp.Size)",
+      `$bmp.Save('${file.replace(/\\/g, "\\\\")}')`
+    ].join("; ");
+    const result = await runPs(script);
+    if (result.ok) {
+      shell.showItemInFolder(file);
+      return { ok: true, detail: `saved to ${file}` };
+    }
+    return { ok: false, error: result.error || "screenshot failed" };
+  }
+  if (name === "recycle") {
+    const result = await runPs("Clear-RecycleBin -Force -ErrorAction SilentlyContinue; Write-Output done");
+    return result.ok ? { ok: true, detail: "recycle bin emptied" } : { ok: false, error: result.error };
+  }
+  if (name === "shutdown") {
+    const minutes = Math.max(1, Math.min(720, Number(action.minutes) || 1));
+    const child = spawn("shutdown.exe", ["/s", "/t", String(minutes * 60)], { detached: true, stdio: "ignore" });
+    child.unref();
+    return { ok: true, detail: `shutting down in ${minutes} minute${minutes > 1 ? "s" : ""}, say cancel shutdown to stop it` };
+  }
+  if (name === "cancel-shutdown") {
+    const child = spawn("shutdown.exe", ["/a"], { detached: true, stdio: "ignore" });
+    child.unref();
+    return { ok: true, detail: "shutdown cancelled" };
+  }
+  return { ok: false, error: `unknown system command ${name}` };
+}
 
 ipcMain.handle("ai:credits", async () => {
   const config = loadConfig();

@@ -121,8 +121,23 @@
   const APP_NAMES = new Set(["notepad", "calculator", "calc", "paint", "explorer", "files", "cmd", "terminal"]);
   const SITE_NAMES = new Set(["browser", "google", "youtube", "github", "discord", "spotify", "reddit", "twitter", "x", "twitch", "gmail", "maps", "netflix", "openrouter"]);
 
+  function parseSystem(t) {
+    if (/^(?:turn\s+)?volume\s+up$|^louder$/.test(t)) return { type: "system", name: "volume-up" };
+    if (/^(?:turn\s+)?volume\s+down$|^quieter$/.test(t)) return { type: "system", name: "volume-down" };
+    if (/^(?:un)?mute(?:\s+(?:the\s+)?(?:pc|sound|audio|volume))?$/.test(t)) return { type: "system", name: "mute" };
+    if (/^lock(?:\s+(?:the\s+)?(?:pc|computer|screen))?$/.test(t)) return { type: "system", name: "lock" };
+    if (/^(?:take\s+a\s+)?screenshot$/.test(t)) return { type: "system", name: "screenshot" };
+    if (/^(?:empty|clear)\s+(?:the\s+)?(?:recycle\s+)?bin$/.test(t)) return { type: "system", name: "recycle" };
+    const shut = t.match(/^shut\s*down(?:\s+(?:the\s+)?(?:pc|computer))?(?:\s+in\s+(\d+)\s*min(?:ute)?s?)?$/);
+    if (shut) return { type: "system", name: "shutdown", minutes: shut[1] ? Number(shut[1]) : 1 };
+    if (/^(?:cancel|abort|stop)\s+(?:the\s+)?shut\s*down$/.test(t)) return { type: "system", name: "cancel-shutdown" };
+    return null;
+  }
+
   function parseAction(text) {
     const t = text.trim().toLowerCase().replace(/^zeno[,.!\s]+/, "").replace(/[.!?]+$/, "");
+    const system = parseSystem(t);
+    if (system) return system;
     let m = t.match(/^(?:open|launch|start|go to)\s+(?:the\s+|my\s+|a\s+)?(.+)$/);
     if (m) {
       const target = m[1].trim();
@@ -167,7 +182,10 @@
     const result = await window.zeno.runAction(action);
     setBusy(false);
     if (result.ok) {
-      const label = action.type === "search" ? `searching for ${action.query}` : `opened ${action.name || action.url}`;
+      let label;
+      if (action.type === "search") label = `searching for ${action.query}`;
+      else if (action.type === "system") label = result.detail;
+      else label = `opened ${action.name || action.url}`;
       addMessage(logId, "zeno", `done. ${label}`);
       if ($("core-voice").checked) window.ZenoVoice.speak(`done, ${label}`);
     } else {
