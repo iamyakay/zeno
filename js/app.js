@@ -14,6 +14,8 @@
     fillConfigForm();
     greet();
     loadBalance();
+    pollStats();
+    setInterval(pollStats, 2500);
   }
 
   function greet() {
@@ -216,6 +218,10 @@
     addMessage(logId, "user", trimmed || "[image]", pendingImage);
 
     if (!pendingImage && trimmed) {
+      const lowered = trimmed.toLowerCase().replace(/^zeno[,.!\s]+/, "").replace(/[.!?]+$/, "");
+      if (/^(?:system\s+status|status\s+report|how(?:'s| is) the (?:system|pc))$/.test(lowered)) {
+        return speakSystemStatus(logId);
+      }
       const action = parseAction(trimmed);
       if (action) {
         return runAction(logId, action);
@@ -460,6 +466,51 @@
     const freeCount = result.models.filter((m) => m.free).length;
     $("cfg-models-count").textContent = `${result.models.length} models loaded, ${freeCount} free`;
   });
+
+  let lastStats = null;
+
+  function formatUptime(sec) {
+    const days = Math.floor(sec / 86400);
+    const hours = Math.floor((sec % 86400) / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
+  }
+
+  async function pollStats() {
+    try {
+      const stats = await window.zeno.getStats();
+      lastStats = stats;
+      $("hud-cpu").textContent = `${stats.cpu}%`;
+      $("hud-cpu-bar").style.width = `${stats.cpu}%`;
+      $("hud-mem").textContent = `${stats.memUsedGb.toFixed(1)} / ${stats.memTotalGb.toFixed(0)} GB`;
+      $("hud-mem-bar").style.width = `${Math.round((stats.memUsedGb / stats.memTotalGb) * 100)}%`;
+      if (stats.disk) {
+        $("hud-disk").textContent = `${stats.disk.usedGb.toFixed(0)} / ${stats.disk.totalGb.toFixed(0)} GB`;
+        $("hud-disk-bar").style.width = `${Math.round((stats.disk.usedGb / stats.disk.totalGb) * 100)}%`;
+      }
+      $("hud-uptime").textContent = formatUptime(stats.uptimeSec);
+    } catch {}
+  }
+
+  function speakSystemStatus(logId) {
+    if (!lastStats) {
+      addMessage(logId, "zeno", "stats aren't loaded yet, give me a second");
+      return;
+    }
+    const s = lastStats;
+    const memPct = Math.round((s.memUsedGb / s.memTotalGb) * 100);
+    const parts = [
+      `cpu at ${s.cpu} percent`,
+      `memory ${s.memUsedGb.toFixed(1)} of ${s.memTotalGb.toFixed(0)} gigs, ${memPct} percent`,
+      s.disk ? `disk ${s.disk.usedGb.toFixed(0)} of ${s.disk.totalGb.toFixed(0)} gigs used` : null,
+      `uptime ${formatUptime(s.uptimeSec)}`
+    ].filter(Boolean);
+    const text = `system status: ${parts.join(", ")}. all nominal.`;
+    addMessage(logId, "zeno", text);
+    if ($("core-voice").checked) window.ZenoVoice.speak(text);
+  }
 
   async function loadBalance() {
     const result = await window.zeno.getCredits();

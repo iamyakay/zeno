@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("zeno", {
   cancelListen: () => ipcRenderer.invoke("os:listen-cancel"),
   genImage: (prompt) => ipcRenderer.invoke("ai:image", prompt),
   runAction: (action) => ipcRenderer.invoke("os:action", action),
+  getStats: () => ipcRenderer.invoke("os:stats"),
   listModels: () => ipcRenderer.invoke("ai:models"),
   getCredits: () => ipcRenderer.invoke("ai:credits"),
   openExternal: (url) => ipcRenderer.invoke("open:external", url)

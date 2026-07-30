@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, session } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
+const os = require("node:os");
 const { spawn } = require("node:child_process");
 
 const configPath = path.join(app.getPath("userData"), "zeno-config.json");
@@ -409,6 +410,50 @@ async function runSystemCommand(action) {
   }
   return { ok: false, error: `unknown system command ${name}` };
 }
+
+let lastCpuSnapshot = null;
+let cachedDisk = null;
+let cachedDiskAt = 0;
+
+function cpuSnapshot() {
+  let idle = 0;
+  let total = 0;
+  for (const cpu of os.cpus()) {
+    for (const key of Object.keys(cpu.times)) total += cpu.times[key];
+    idle += cpu.times.idle;
+  }
+  return { idle, total };
+}
+
+ipcMain.handle("os:stats", async () => {
+  const snap = cpuSnapshot();
+  let cpu = 0;
+  if (lastCpuSnapshot) {
+    const dTotal = snap.total - lastCpuSnapshot.total;
+    const dIdle = snap.idle - lastCpuSnapshot.idle;
+    cpu = dTotal > 0 ? Math.max(0, Math.min(100, Math.round((1 - dIdle / dTotal) * 100))) : 0;
+  }
+  lastCpuSnapshot = snap;
+
+  if (!cachedDisk || Date.now() - cachedDiskAt > 60000) {
+    const result = await runPs("$d = Get-PSDrive C; Write-Output \"$($d.Used)|$($d.Free)\"", 8000);
+    if (result.ok && result.output.includes("|")) {
+      const [used, free] = result.output.split("|").map(Number);
+      if (Number.isFinite(used) && Number.isFinite(free)) {
+        cachedDisk = { usedGb: used / 1073741824, totalGb: (used + free) / 1073741824 };
+        cachedDiskAt = Date.now();
+      }
+    }
+  }
+
+  return {
+    cpu,
+    memUsedGb: (os.totalmem() - os.freemem()) / 1073741824,
+    memTotalGb: os.totalmem() / 1073741824,
+    disk: cachedDisk,
+    uptimeSec: Math.round(os.uptime())
+  };
+});
 
 ipcMain.handle("ai:credits", async () => {
   const config = loadConfig();
