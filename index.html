@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:">
+  <title>ZENO</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="green">
+  <canvas id="starfield"></canvas>
+
+  <button id="nav-toggle" title="menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <aside id="sidebar">
+    <div class="side-brand">
+      <span class="brand-mark"></span>
+      <h1>ZENO</h1>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-view="core"><i>◉</i> CORE</button>
+      <button class="nav-btn" data-view="chat"><i>▤</i> CHAT</button>
+      <button class="nav-btn" data-view="config"><i>⚙</i> CONFIG</button>
+      <button class="nav-btn" data-view="credits"><i>✦</i> CREDITS</button>
+    </nav>
+    <div class="side-status">
+      <span id="status-dot" class="dot ok"></span>
+      <span id="status-text">ONLINE</span>
+    </div>
+  </aside>
+  <div id="sidebar-veil"></div>
+
+  <main>
+    <section id="view-core" class="view active">
+      <div class="globe-stage">
+        <canvas id="globe" width="900" height="900"></canvas>
+        <div id="globe-aura"></div>
+        <div id="globe-state"></div>
+        <div id="globe-hint">click the core to talk, click again to send</div>
+      </div>
+      <div class="core-dock" id="core-dock">
+        <button type="button" id="dock-handle" title="collapse chat"><span class="chev"></span></button>
+        <div class="dock-body">
+          <div id="core-transcript"></div>
+          <form id="core-form">
+            <input id="core-input" type="text" placeholder="ask ZENO anything..." autocomplete="off">
+            <button type="button" id="core-image-btn" title="attach image">IMG</button>
+            <button type="button" id="core-mic-btn" title="voice input">MIC</button>
+            <button type="submit" id="core-send-btn">SEND</button>
+          </form>
+          <div class="core-toggles">
+            <label class="toggle"><input type="checkbox" id="core-consensus"> multi-AI consensus</label>
+            <label class="toggle"><input type="checkbox" id="core-voice" checked> voice replies</label>
+            <button type="button" id="dock-expand" class="ghost-btn">expand</button>
+            <span id="core-attach-name"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-chat" class="view">
+      <div id="chat-log"></div>
+      <div id="chat-agents"></div>
+      <form id="chat-form">
+        <input id="chat-input" type="text" placeholder="message ZENO..." autocomplete="off">
+        <button type="button" id="chat-image-btn" title="attach image">IMG</button>
+        <button type="button" id="chat-mic-btn" title="voice input">MIC</button>
+        <button type="submit">SEND</button>
+      </form>
+      <div class="core-toggles">
+        <label class="toggle"><input type="checkbox" id="chat-consensus"> multi-AI consensus</label>
+        <button type="button" id="chat-clear" class="ghost-btn">clear chat</button>
+        <span id="chat-attach-name"></span>
+      </div>
+    </section>
+
+    <section id="view-config" class="view">
+      <h2>CONFIGURATION</h2>
+      <div class="config-grid">
+        <div class="config-card">
+          <h3>API</h3>
+          <label>OpenRouter API key
+            <input id="cfg-key" type="password" placeholder="sk-or-v1-...">
+          </label>
+          <label>Base URL
+            <input id="cfg-base" type="text" placeholder="https://openrouter.ai/api/v1">
+          </label>
+          <p class="hint">works with any OpenAI compatible API: OpenRouter, Groq, Together, local Ollama, LM Studio. just change the base URL and key.</p>
+          <button id="cfg-test" class="ghost-btn">test connection</button>
+          <span id="cfg-test-result"></span>
+        </div>
+        <div class="config-card">
+          <h3>MODELS</h3>
+          <label>Primary model
+            <input id="cfg-model" type="text" list="model-list" placeholder="google/gemma-4-26b-a4b-it:free">
+          </label>
+          <label>Vision model (images)
+            <input id="cfg-vision" type="text" list="model-list" placeholder="google/gemma-4-26b-a4b-it:free">
+          </label>
+          <label>Judge model (consensus referee)
+            <input id="cfg-judge" type="text" list="model-list" placeholder="google/gemma-4-26b-a4b-it:free">
+          </label>
+          <datalist id="model-list"></datalist>
+          <button id="cfg-refresh-models" class="ghost-btn">load model list</button>
+          <span id="cfg-models-count"></span>
+        </div>
+        <div class="config-card">
+          <h3>CONSENSUS SQUAD</h3>
+          <p class="hint">these models all answer in parallel, then the judge merges where they agree and flags where they don't.</p>
+          <textarea id="cfg-squad" rows="4" placeholder="one model id per line"></textarea>
+        </div>
+        <div class="config-card">
+          <h3>APPEARANCE + VOICE</h3>
+          <label>Theme
+            <select id="cfg-theme">
+              <option value="green">green matrix</option>
+              <option value="red">red alert</option>
+            </select>
+          </label>
+          <label>Your name
+            <input id="cfg-name" type="text" placeholder="Zap">
+          </label>
+          <label class="toggle"><input type="checkbox" id="cfg-voice"> speak replies out loud</label>
+          <label class="toggle"><input type="checkbox" id="cfg-consensus"> consensus on by default</label>
+        </div>
+      </div>
+      <button id="cfg-save" class="primary-btn">SAVE CONFIGURATION</button>
+      <span id="cfg-saved"></span>
+    </section>
+
+    <section id="view-credits" class="view">
+      <h2>CREDITS</h2>
+      <div class="credits-card">
+        <div class="credits-logo"></div>
+        <h3>ZENO v1.1</h3>
+        <p>built by <strong>Zap</strong></p>
+        <div class="credits-links">
+          <button class="link-btn" data-url="https://github.com/iamyakay">GitHub / iamyakay</button>
+          <button class="link-btn" data-copy="Sethlowk">Discord / Sethlowk (click to copy)</button>
+          <button class="link-btn" data-url="https://openrouter.ai">OpenRouter</button>
+        </div>
+        <div id="credits-balance" class="hint"></div>
+      </div>
+    </section>
+  </main>
+
+  <input type="file" id="image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+  <script src="js/globe.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

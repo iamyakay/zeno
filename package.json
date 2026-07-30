@@ -1,0 +1,14 @@
+{
+  "name": "zeno",
+  "version": "1.0.0",
+  "description": "ZENO, a personal AI command center",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Zap",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.7.7"
+  }
+}
