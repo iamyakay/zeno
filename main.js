@@ -525,6 +525,32 @@ ipcMain.handle("os:action", async (_event, action) => {
   }
 });
 
+ipcMain.handle("os:screen-look", async () => {
+  const file = path.join(app.getPath("temp"), `zeno-look-${Date.now()}.png`);
+  const wasVisible = win && !win.isDestroyed() && win.isVisible() && !win.isMinimized();
+  if (wasVisible) win.minimize();
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  const script = [
+    "Add-Type -AssemblyName System.Windows.Forms",
+    "Add-Type -AssemblyName System.Drawing",
+    "$b = [System.Windows.Forms.SystemInformation]::VirtualScreen",
+    "$bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height",
+    "$g = [System.Drawing.Graphics]::FromImage($bmp)",
+    "$g.CopyFromScreen($b.Left, $b.Top, 0, 0, $bmp.Size)",
+    `$bmp.Save('${file.replace(/\\/g, "\\\\")}')`
+  ].join("; ");
+  const result = await runPs(script);
+  if (wasVisible) win.restore();
+  if (!result.ok) return { ok: false, error: result.error || "capture failed" };
+  try {
+    const buffer = fs.readFileSync(file);
+    fs.unlinkSync(file);
+    return { ok: true, dataUrl: `data:image/png;base64,${buffer.toString("base64")}` };
+  } catch (error) {
+    return { ok: false, error: String(error?.message || error) };
+  }
+});
+
 async function runSystemCommand(action) {
   const name = action.name;
   if (name === "volume-up" || name === "volume-down") {

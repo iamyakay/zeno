@@ -449,6 +449,10 @@
         addMessage(logId, "zeno", "memory wiped.");
         return;
       }
+      const screenAsk = lowered.match(/^(?:look at|read|check|analyze)\s+(?:my\s+|the\s+)?screen(?:\s+and\s+(.+))?$/) || lowered.match(/^what(?:'s| is) on my screen(?:\s*\?)?$/);
+      if (screenAsk) {
+        return lookAtScreen(logId, screenAsk[1] || null);
+      }
       const weather = lowered.match(/^(?:what(?:'s| is) the )?weather(?: like)?(?: (?:in|at|for) (.+))?$/);
       if (weather) {
         if (!weather[1]) {
@@ -775,6 +779,31 @@
     const text = `system status: ${parts.join(", ")}. all nominal.`;
     addMessage(logId, "zeno", text);
     if ($("core-voice").checked) window.ZenoVoice.speak(text);
+  }
+
+  async function askDirect(logId, question, imageDataUrl, meta) {
+    setBusy(true);
+    const thinkingRow = addThinking(logId);
+    const result = await window.ZenoEngine.askSingle(config, question, imageDataUrl);
+    thinkingRow.remove();
+    setBusy(false);
+    if (!result.ok) {
+      addMessage(logId, "zeno", `error: ${result.error}`, null, `model: ${result.model}`);
+      return;
+    }
+    addMessage(logId, "zeno", result.text, null, meta || result.model);
+    if ($("core-voice").checked) window.ZenoVoice.speak(result.text);
+  }
+
+  async function lookAtScreen(logId, question) {
+    setBusy(true);
+    const shot = await window.zeno.screenLook();
+    setBusy(false);
+    if (!shot.ok) {
+      addMessage(logId, "zeno", `couldn't capture the screen: ${shot.error}`);
+      return;
+    }
+    await askDirect(logId, question || "describe what is on my screen and point out anything important", shot.dataUrl, "screen vision");
   }
 
   async function reportWeather(logId, city) {
