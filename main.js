@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, session } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, session, clipboard } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -523,6 +523,13 @@ ipcMain.handle("os:action", async (_event, action) => {
   } catch (error) {
     return { ok: false, error: String(error?.message || error) };
   }
+});
+
+ipcMain.handle("os:clipboard-read", () => clipboard.readText());
+
+ipcMain.handle("os:clipboard-write", (_event, text) => {
+  clipboard.writeText(String(text ?? ""));
+  return true;
 });
 
 ipcMain.handle("os:screen-look", async () => {

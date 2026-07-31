@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("zeno", {
   runAction: (action) => ipcRenderer.invoke("os:action", action),
   getStats: () => ipcRenderer.invoke("os:stats"),
   screenLook: () => ipcRenderer.invoke("os:screen-look"),
+  clipboardRead: () => ipcRenderer.invoke("os:clipboard-read"),
+  clipboardWrite: (text) => ipcRenderer.invoke("os:clipboard-write", text),
   memList: () => ipcRenderer.invoke("mem:list"),
   memAdd: (fact) => ipcRenderer.invoke("mem:add", fact),
   memClear: () => ipcRenderer.invoke("mem:clear"),

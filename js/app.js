@@ -4,6 +4,7 @@
   let busy = false;
   let session = null;
   let saveTimer = null;
+  let lastZenoReply = null;
 
   const $ = (id) => document.getElementById(id);
 
@@ -155,6 +156,7 @@
     const label = document.createElement("div");
     label.className = "who";
     label.textContent = who === "user" ? (config.userName || "YOU").toUpperCase() : "ZENO";
+    if (who === "zeno") lastZenoReply = text;
     const body = document.createElement("div");
     body.className = "body";
     if (who === "zeno" && hasMarkdown(text)) {
@@ -452,6 +454,31 @@
       const screenAsk = lowered.match(/^(?:look at|read|check|analyze)\s+(?:my\s+|the\s+)?screen(?:\s+and\s+(.+))?$/) || lowered.match(/^what(?:'s| is) on my screen(?:\s*\?)?$/);
       if (screenAsk) {
         return lookAtScreen(logId, screenAsk[1] || null);
+      }
+      const clip = lowered.match(/^(summarize|explain|translate|fix|rewrite)\s+(?:my\s+|the\s+)?clipboard(?:\s+(?:to|into|in)\s+(.+))?$/);
+      if (clip) {
+        const content = await window.zeno.clipboardRead();
+        if (!content.trim()) {
+          addMessage(logId, "zeno", "your clipboard is empty, copy something first");
+          return;
+        }
+        const prompts = {
+          summarize: "Summarize this concisely:",
+          explain: "Explain this in simple terms:",
+          translate: `Translate this to ${clip[2] || "english"}, reply with only the translation:`,
+          fix: "Fix the grammar and spelling, reply with only the corrected text:",
+          rewrite: "Rewrite this to read better, reply with only the rewritten text:"
+        };
+        return askDirect(logId, `${prompts[clip[1]]}\n\n${content.slice(0, 6000)}`, null, `clipboard ${clip[1]}`);
+      }
+      if (/^copy\s+(?:that|last(?:\s+reply)?|reply)$/.test(lowered)) {
+        if (lastZenoReply) {
+          await window.zeno.clipboardWrite(lastZenoReply);
+          addMessage(logId, "zeno", "copied to clipboard.");
+        } else {
+          addMessage(logId, "zeno", "nothing to copy yet");
+        }
+        return;
       }
       const weather = lowered.match(/^(?:what(?:'s| is) the )?weather(?: like)?(?: (?:in|at|for) (.+))?$/);
       if (weather) {
