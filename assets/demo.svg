@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="440" viewBox="0 0 780 440" font-family="ui-monospace, 'Cascadia Code', Consolas, monospace">
+  <defs>
+    <clipPath id="frame"><rect width="780" height="440" rx="12"/></clipPath>
+    <radialGradient id="aura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00ff8c" stop-opacity="0.16"/>
+      <stop offset="70%" stop-color="#00ff8c" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#00ff8c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="780" height="440" rx="12" fill="#04070a"/>
+
+    <circle cx="235" cy="205" r="150" fill="url(#aura)">
+      <animate attributeName="r" values="150;168;150" dur="3.2s" repeatCount="indefinite"/>
+    </circle>
+
+    <g stroke="#00ff8c" fill="none" opacity="0.35">
+      <ellipse cx="235" cy="205" rx="150" ry="44">
+        <animateTransform attributeName="transform" type="rotate" from="0 235 205" to="360 235 205" dur="14s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="235" cy="205" rx="163" ry="38" transform="rotate(24 235 205)"/>
+      <ellipse cx="235" cy="205" rx="176" ry="33" transform="rotate(-19 235 205)"/>
+    </g>
+
+    <g fill="#00ff8c">
+      <circle cx="385" cy="205" r="3" opacity="0.9">
+        <animateTransform attributeName="transform" type="rotate" from="0 235 205" to="360 235 205" dur="6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <g fill="#00ff8c">
+      <circle cx="235" cy="205" r="118" fill="none" stroke="#00ff8c" stroke-opacity="0.25" stroke-dasharray="2 6"/>
+      <g opacity="0.95">
+        <circle cx="235" cy="93" r="2"/>
+        <circle cx="180" cy="105" r="2.4"/><circle cx="290" cy="105" r="2.4"/>
+        <circle cx="145" cy="135" r="2.2"/><circle cx="235" cy="128" r="2.6"/><circle cx="325" cy="135" r="2.2"/>
+        <circle cx="125" cy="172" r="2.6"/><circle cx="192" cy="162" r="2.2"/><circle cx="278" cy="162" r="2.2"/><circle cx="345" cy="172" r="2.6"/>
+        <circle cx="118" cy="205" r="2.4"/><circle cx="175" cy="200" r="2.8"/><circle cx="235" cy="196" r="2.2"/><circle cx="295" cy="200" r="2.8"/><circle cx="352" cy="205" r="2.4"/>
+        <circle cx="125" cy="240" r="2.6"/><circle cx="192" cy="247" r="2.2"/><circle cx="278" cy="247" r="2.2"/><circle cx="345" cy="240" r="2.6"/>
+        <circle cx="145" cy="275" r="2.2"/><circle cx="235" cy="282" r="2.6"/><circle cx="325" cy="275" r="2.2"/>
+        <circle cx="180" cy="305" r="2.4"/><circle cx="290" cy="305" r="2.4"/>
+        <circle cx="235" cy="317" r="2"/>
+        <animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.6s" repeatCount="indefinite"/>
+      </g>
+    </g>
+
+    <text x="205" y="62" fill="#00ff8c" font-size="24" letter-spacing="10">ZENO</text>
+
+    <g font-size="13">
+      <text x="440" y="120" fill="#6fae90" opacity="0">
+        YOU
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="0.6s" fill="freeze"/>
+      </text>
+      <text x="440" y="140" fill="#e6ffe9" opacity="0">
+        hey zeno, system status
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="0.9s" fill="freeze"/>
+      </text>
+
+      <text x="440" y="176" fill="#ff2e4d" opacity="0">
+        ZENO
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="1.9s" fill="freeze"/>
+      </text>
+      <text x="440" y="196" fill="#d4ffe9" opacity="0">
+        cpu at 11 percent, memory 6.2 of 16
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="2.1s" fill="freeze"/>
+      </text>
+      <text x="440" y="214" fill="#d4ffe9" opacity="0">
+        gigs, uptime 4h 12m. all nominal.
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="2.25s" fill="freeze"/>
+      </text>
+
+      <text x="440" y="250" fill="#6fae90" opacity="0">
+        YOU
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="3.4s" fill="freeze"/>
+      </text>
+      <text x="440" y="270" fill="#e6ffe9" opacity="0">
+        generate an image of a red planet
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="3.7s" fill="freeze"/>
+      </text>
+
+      <text x="440" y="306" fill="#ff2e4d" opacity="0">
+        ZENO
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="4.7s" fill="freeze"/>
+      </text>
+      <text x="440" y="326" fill="#d4ffe9" opacity="0">
+        here you go: a red planet
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="4.9s" fill="freeze"/>
+      </text>
+      <rect x="440" y="338" width="90" height="56" rx="4" fill="#1a0a0a" stroke="#ff2e4d" stroke-opacity="0.5" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="5.2s" fill="freeze"/>
+      </rect>
+      <circle cx="485" cy="366" r="18" fill="#ff2e4d" fill-opacity="0.65" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" dur="0.01s" begin="5.35s" fill="freeze"/>
+      </circle>
+
+      <rect x="440" y="408" width="9" height="15" fill="#00ff8c">
+        <animate attributeName="opacity" values="1;0;1" dur="1.1s" begin="6s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+
+    <g font-size="10" fill="#6fae90" opacity="0.85">
+      <text x="26" y="418">CPU 11%</text>
+      <text x="110" y="418">MEM 6.2/16 GB</text>
+      <text x="240" y="418">DISK 212/476 GB</text>
+      <text x="370" y="418">UPTIME 4h 12m</text>
+    </g>
+  </g>
+</svg>
