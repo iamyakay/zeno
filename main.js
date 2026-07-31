@@ -528,6 +528,46 @@ async function runSystemCommand(action) {
   return { ok: false, error: `unknown system command ${name}` };
 }
 
+const chatsPath = path.join(app.getPath("userData"), "zeno-chats.json");
+
+function loadChats() {
+  try {
+    const data = JSON.parse(fs.readFileSync(chatsPath, "utf8"));
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeChats(chats) {
+  fs.mkdirSync(path.dirname(chatsPath), { recursive: true });
+  fs.writeFileSync(chatsPath, JSON.stringify(chats));
+}
+
+ipcMain.handle("chats:list", () => {
+  return loadChats().map((c) => ({ id: c.id, title: c.title, at: c.at, count: c.messages.length }));
+});
+
+ipcMain.handle("chats:save", (_event, session) => {
+  if (!session?.id || !Array.isArray(session.messages) || session.messages.length === 0) return false;
+  const chats = loadChats();
+  const index = chats.findIndex((c) => c.id === session.id);
+  if (index >= 0) chats[index] = session;
+  else chats.push(session);
+  while (chats.length > 60) chats.shift();
+  writeChats(chats);
+  return true;
+});
+
+ipcMain.handle("chats:load", (_event, id) => {
+  return loadChats().find((c) => c.id === id) || null;
+});
+
+ipcMain.handle("chats:delete", (_event, id) => {
+  writeChats(loadChats().filter((c) => c.id !== id));
+  return true;
+});
+
 const memoryPath = path.join(app.getPath("userData"), "zeno-memory.json");
 
 function loadMemory() {

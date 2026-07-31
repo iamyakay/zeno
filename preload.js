@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld("zeno", {
   memClear: () => ipcRenderer.invoke("mem:clear"),
   onWake: (callback) => ipcRenderer.on("zeno:wake", callback),
   getWeather: (city) => ipcRenderer.invoke("net:weather", city),
+  chatsList: () => ipcRenderer.invoke("chats:list"),
+  chatsSave: (session) => ipcRenderer.invoke("chats:save", session),
+  chatsLoad: (id) => ipcRenderer.invoke("chats:load", id),
+  chatsDelete: (id) => ipcRenderer.invoke("chats:delete", id),
   listModels: () => ipcRenderer.invoke("ai:models"),
   getCredits: () => ipcRenderer.invoke("ai:credits"),
   openExternal: (url) => ipcRenderer.invoke("open:external", url)

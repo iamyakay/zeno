@@ -21,6 +21,7 @@
     <nav>
       <button class="nav-btn active" data-view="core"><i>◉</i> CORE</button>
       <button class="nav-btn" data-view="chat"><i>▤</i> CHAT</button>
+      <button class="nav-btn" data-view="history"><i>≡</i> HISTORY</button>
       <button class="nav-btn" data-view="config"><i>⚙</i> CONFIG</button>
       <button class="nav-btn" data-view="credits"><i>✦</i> CREDITS</button>
     </nav>
@@ -77,6 +78,11 @@
         <button type="button" id="chat-clear" class="ghost-btn">clear chat</button>
         <span id="chat-attach-name"></span>
       </div>
+    </section>
+
+    <section id="view-history" class="view">
+      <h2>CHAT HISTORY</h2>
+      <div id="history-list"></div>
     </section>
 
     <section id="view-config" class="view">

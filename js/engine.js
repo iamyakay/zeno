@@ -121,5 +121,16 @@
     history.length = 0;
   }
 
-  window.ZenoEngine = { askSingle, askConsensus, clearHistory };
+  function getHistory() {
+    return [...history];
+  }
+
+  function setHistory(entries) {
+    history.length = 0;
+    if (Array.isArray(entries)) {
+      for (const entry of entries.slice(-MAX_TURNS)) history.push(entry);
+    }
+  }
+
+  window.ZenoEngine = { askSingle, askConsensus, clearHistory, getHistory, setHistory };
 })();

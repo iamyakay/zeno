@@ -2,8 +2,25 @@
   let config = null;
   let pendingImage = null;
   let busy = false;
+  let session = null;
+  let saveTimer = null;
 
   const $ = (id) => document.getElementById(id);
+
+  function newSession() {
+    session = { id: `s${Date.now()}`, title: "", at: new Date().toISOString(), messages: [], engineHistory: [] };
+  }
+
+  function recordMessage(who, text, meta) {
+    if (!session) newSession();
+    if (!session.title && who === "user") session.title = text.slice(0, 60);
+    session.messages.push({ who, text: text.slice(0, 8000), meta: meta || null });
+    session.engineHistory = window.ZenoEngine.getHistory();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (session.messages.length > 0 && session.title) window.zeno.chatsSave(session);
+    }, 600);
+  }
 
   async function boot() {
     config = await window.zeno.getConfig();
@@ -152,7 +169,76 @@
     }
     log.appendChild(wrap);
     log.scrollTop = log.scrollHeight;
+    if (!imageUrl || who === "zeno") {
+      recordMessage(who, text, meta);
+    } else {
+      recordMessage(who, text ? `${text} [image attached]` : "[image attached]", meta);
+    }
     return wrap;
+  }
+
+  function replayMessage(logId, entry) {
+    const log = $(logId);
+    const wrap = document.createElement("div");
+    wrap.className = `msg ${entry.who}`;
+    const label = document.createElement("div");
+    label.className = "who";
+    label.textContent = entry.who === "user" ? (config.userName || "YOU").toUpperCase() : "ZENO";
+    const body = document.createElement("div");
+    body.className = "body";
+    if (entry.who === "zeno" && hasMarkdown(entry.text)) {
+      renderMarkdown(body, entry.text);
+    } else {
+      body.textContent = entry.text;
+    }
+    wrap.append(label, body);
+    if (entry.meta) {
+      const metaEl = document.createElement("div");
+      metaEl.className = "meta";
+      metaEl.textContent = entry.meta;
+      wrap.appendChild(metaEl);
+    }
+    log.appendChild(wrap);
+  }
+
+  async function renderHistoryList() {
+    const list = $("history-list");
+    list.innerHTML = "";
+    const chats = await window.zeno.chatsList();
+    if (chats.length === 0) {
+      list.innerHTML = '<p class="hint">no saved conversations yet, go talk to me first</p>';
+      return;
+    }
+    for (const chat of chats.slice().reverse()) {
+      const item = document.createElement("div");
+      item.className = "history-item";
+      const title = document.createElement("span");
+      title.className = "h-title";
+      title.textContent = chat.title || "untitled";
+      const meta = document.createElement("span");
+      meta.className = "h-meta";
+      meta.textContent = `${chat.count} msgs · ${chat.at.slice(0, 10)}`;
+      const del = document.createElement("button");
+      del.className = "h-del";
+      del.textContent = "delete";
+      del.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        await window.zeno.chatsDelete(chat.id);
+        item.remove();
+      });
+      item.append(title, meta, del);
+      item.addEventListener("click", async () => {
+        const full = await window.zeno.chatsLoad(chat.id);
+        if (!full) return;
+        $("chat-log").innerHTML = "";
+        session = full;
+        window.ZenoEngine.setHistory(full.engineHistory);
+        for (const entry of full.messages) replayMessage("chat-log", entry);
+        $("chat-log").scrollTop = $("chat-log").scrollHeight;
+        switchView("chat");
+      });
+      list.appendChild(item);
+    }
   }
 
   function addThinking(logId) {
@@ -443,6 +529,7 @@
     $("chat-log").innerHTML = "";
     window.ZenoEngine.clearHistory();
     clearAgents();
+    newSession();
   });
 
   async function startVoice(targetInput, micBtn, logId, consensusToggle) {
@@ -507,14 +594,16 @@
 
   $("sidebar-veil").addEventListener("click", closeSidebar);
 
+  function switchView(name) {
+    document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === name));
+    document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+    $(`view-${name}`).classList.add("active");
+    if (name === "history") renderHistoryList();
+    closeSidebar();
+  }
+
   for (const btn of document.querySelectorAll(".nav-btn")) {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
-      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
-      btn.classList.add("active");
-      $(`view-${btn.dataset.view}`).classList.add("active");
-      closeSidebar();
-    });
+    btn.addEventListener("click", () => switchView(btn.dataset.view));
   }
 
   function fillConfigForm() {

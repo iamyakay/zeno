@@ -683,6 +683,58 @@ button { font-family: var(--mono); cursor: pointer; }
 .agent-chip.done { color: var(--accent); border-color: var(--accent-dim); }
 .agent-chip.failed { color: var(--danger); border-color: var(--danger); }
 
+#view-history { overflow-y: auto; gap: 14px; padding-top: 72px; }
+
+#view-history h2 {
+  font-size: 15px;
+  letter-spacing: 6px;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-dim);
+}
+
+#history-list { display: flex; flex-direction: column; gap: 8px; }
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.history-item:hover {
+  border-color: var(--accent-dim);
+  transform: translateX(3px);
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+
+.history-item .h-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.history-item .h-meta { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+
+.history-item .h-del {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 10px;
+  transition: all 140ms ease;
+}
+
+.history-item .h-del:hover { color: var(--danger); border-color: var(--danger); }
+
 #view-config { overflow-y: auto; gap: 16px; padding-top: 72px; }
 
 #view-config h2, #view-credits h2 {
