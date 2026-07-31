@@ -683,6 +683,15 @@ button { font-family: var(--mono); cursor: pointer; }
 .agent-chip.done { color: var(--accent); border-color: var(--accent-dim); }
 .agent-chip.failed { color: var(--danger); border-color: var(--danger); }
 
+.agent-chip.fastest {
+  color: #ffd75e;
+  border-color: #ffd75e;
+  box-shadow: 0 0 12px rgba(255, 215, 94, 0.35);
+  text-shadow: 0 0 8px rgba(255, 215, 94, 0.5);
+}
+
+.agent-chip.fastest::after { content: " ⚡"; }
+
 #view-history { overflow-y: auto; gap: 14px; padding-top: 72px; }
 
 #view-history h2 {

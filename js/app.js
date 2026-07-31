@@ -251,6 +251,8 @@
     return row;
   }
 
+  let raceTimer = null;
+
   function renderAgents(updates) {
     const bar = $("chat-agents");
     bar.classList.add("active");
@@ -264,8 +266,39 @@
         bar.appendChild(chip);
       }
       const shortName = update.model.split("/").pop().replace(/:free$/, "");
-      chip.textContent = `${update.judge ? "JUDGE " : ""}${shortName}`;
+      chip.dataset.name = `${update.judge ? "JUDGE " : ""}${shortName}`;
+      if (update.state === "working") {
+        chip.dataset.startedAt = String(update.startedAt ?? performance.now());
+        chip.textContent = `${chip.dataset.name} · 0.0s`;
+      } else {
+        const ms = update.ms != null ? ` · ${(update.ms / 1000).toFixed(1)}s` : "";
+        chip.textContent = `${chip.dataset.name}${ms}${update.state === "failed" ? " ✗" : ""}`;
+      }
       chip.className = `agent-chip ${update.state}`;
+    }
+    const done = [...bar.querySelectorAll(".agent-chip.done")].filter((c) => !c.id.endsWith("_judge"));
+    if (done.length > 0) {
+      let fastest = null;
+      for (const chip of done) {
+        const ms = Number(chip.textContent.match(/([\d.]+)s/)?.[1] || Infinity);
+        if (!fastest || ms < Number(fastest.textContent.match(/([\d.]+)s/)?.[1] || Infinity)) fastest = chip;
+      }
+      bar.querySelectorAll(".agent-chip.fastest").forEach((c) => c.classList.remove("fastest"));
+      fastest?.classList.add("fastest");
+    }
+    if (!raceTimer) {
+      raceTimer = setInterval(() => {
+        const working = bar.querySelectorAll(".agent-chip.working");
+        if (working.length === 0) {
+          clearInterval(raceTimer);
+          raceTimer = null;
+          return;
+        }
+        for (const chip of working) {
+          const elapsed = (performance.now() - Number(chip.dataset.startedAt)) / 1000;
+          chip.textContent = `${chip.dataset.name} · ${elapsed.toFixed(1)}s`;
+        }
+      }, 100);
     }
   }
 
@@ -273,6 +306,10 @@
     const bar = $("chat-agents");
     bar.innerHTML = "";
     bar.classList.remove("active");
+    if (raceTimer) {
+      clearInterval(raceTimer);
+      raceTimer = null;
+    }
   }
 
   const APP_NAMES = new Set(["notepad", "calculator", "calc", "paint", "explorer", "files", "cmd", "terminal"]);

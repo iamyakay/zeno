@@ -58,13 +58,15 @@
     }
 
     const messages = buildMessages(config, userText, imageDataUrl);
-    onAgentUpdate?.(squad.map((m) => ({ model: m, state: "working" })));
+    onAgentUpdate?.(squad.map((m) => ({ model: m, state: "working", startedAt: performance.now() })));
 
     const answers = await Promise.all(
       squad.map(async (model) => {
+        const startedAt = performance.now();
         const result = await window.zeno.chat({ model, messages });
-        onAgentUpdate?.([{ model, state: result.ok ? "done" : "failed" }]);
-        return { model, ...result };
+        const ms = Math.round(performance.now() - startedAt);
+        onAgentUpdate?.([{ model, state: result.ok ? "done" : "failed", ms }]);
+        return { model, ms, ...result };
       })
     );
 
@@ -90,7 +92,8 @@
       "Do not mention that you are merging answers. Just answer well.",
     ].join("\n");
 
-    onAgentUpdate?.([{ model: config.judgeModel, state: "working", judge: true }]);
+    onAgentUpdate?.([{ model: config.judgeModel, state: "working", judge: true, startedAt: performance.now() }]);
+    const judgeStartedAt = performance.now();
     const verdict = await window.zeno.chat({
       model: config.judgeModel,
       messages: [
@@ -98,7 +101,7 @@
         { role: "user", content: judgePrompt }
       ]
     });
-    onAgentUpdate?.([{ model: config.judgeModel, state: verdict.ok ? "done" : "failed", judge: true }]);
+    onAgentUpdate?.([{ model: config.judgeModel, state: verdict.ok ? "done" : "failed", judge: true, ms: Math.round(performance.now() - judgeStartedAt) }]);
 
     const finalText = verdict.ok ? verdict.text : good[0].text;
     pushHistory("user", userText || "[image]");
