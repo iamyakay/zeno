@@ -113,6 +113,49 @@ html, body {
   transition: width 350ms ease;
 }
 
+#update-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border: 1px solid var(--accent-dim);
+  border-radius: 8px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 18px var(--accent-glow);
+  animation: hud-in 500ms ease;
+}
+
+#update-banner.off { display: none; }
+
+#update-banner button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+#update-get {
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+}
+
+#update-get:hover { background: var(--accent); color: #001a0d; }
+
+#update-dismiss {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+}
+
 #nav-toggle {
   position: fixed;
   top: 16px;

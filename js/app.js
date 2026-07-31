@@ -99,6 +99,7 @@
     pollStats();
     setInterval(pollStats, 2500);
     refreshTodoPanel();
+    setTimeout(checkForUpdates, 4000);
     await bootStep(100, "online");
     $("boot-screen").classList.add("done");
     setTimeout(() => $("boot-screen").remove(), 700);
@@ -905,6 +906,17 @@
     const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: wx.timezone });
     addMessage(logId, "zeno", `${wx.place}: ${now}`);
     if ($("core-voice").checked) window.ZenoVoice.speak(`in ${wx.place} it's ${now}`);
+  }
+
+  async function checkForUpdates() {
+    try {
+      const info = await window.zeno.checkUpdate();
+      if (!info.update) return;
+      $("update-text").textContent = `ZENO ${info.latest} is out, you're on ${info.current}`;
+      $("update-banner").classList.remove("off");
+      $("update-get").onclick = () => window.zeno.openExternal(info.url);
+      $("update-dismiss").onclick = () => $("update-banner").classList.add("off");
+    } catch {}
   }
 
   async function loadBalance() {
