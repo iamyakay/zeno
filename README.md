@@ -1,32 +1,18 @@
 # ZENO
 
-A personal AI command center for Windows. One desktop app with a holographic globe you talk to, powered by whatever AI models you want.
-
-Built with Electron, plain JS and zero framework bloat.
+My take on a personal Jarvis. It's a Windows desktop app with a spinning holographic globe you click and talk to. Under the hood it runs on whatever AI model you point it at, but it works out of the box with the free ones on OpenRouter, so using it costs nothing.
 
 ![ZENO](assets/demo.svg)
 
-## What it does
+I built this because I wanted one place where I could ask questions, control my PC and mess around with different models without opening six browser tabs. It grew from there.
 
-- **Chat with any model.** Works with OpenRouter out of the box (free models included), and any OpenAI compatible API: Groq, Together, local Ollama or LM Studio. Just swap the base URL and key in CONFIG.
-- **Multi-AI consensus.** Flip one toggle and your question goes to several models in parallel. A judge model merges what they agree on and flags what they don't. Watch each agent work in real time.
-- **Voice.** Click the globe, speak, done. Speech recognition runs fully offline through Windows' built in engine, no cloud, no cost. Replies are spoken back if you want.
-- **Image generation.** Say "generate an image of a neon samurai" and the picture appears in chat. Free, no key needed.
-- **Vision.** Attach any image and ask questions about it.
-- **App commands.** "open youtube", "open notepad", "open ggbalcony.com", "search best mechanical keyboards". ZENO opens sites, launches apps and runs searches for you.
-- **System control.** Volume, mute, lock the PC, screenshots, empty the recycle bin, timed shutdown with cancel. All by voice or text.
-- **Live system HUD.** CPU, memory, disk and uptime readouts float around the globe. Ask "system status" and ZENO reads it out.
-- **Wake word.** Turn on "hey zeno" in CONFIG and it answers hands free, no clicking.
-- **Memory.** "remember my exam is friday" sticks across restarts. "what do you remember" lists it, "forget everything" wipes it.
-- **Weather and time.** "weather in tokyo", "time in new york". Free API, no key.
-- **Chat history.** Every conversation is saved. Browse, resume or delete them in the HISTORY tab.
-- **Model race.** In consensus mode every model shows a live timer, the fastest one gets crowned.
-- **Plugins.** Drop a js file in the plugins folder and it becomes a command. A dice roller ships as the example.
-- **Two themes.** Green matrix or red alert. Everything glows accordingly.
+## Getting it
 
-## Setup
+Grab `ZENO-Setup` from the [latest release](https://github.com/iamyakay/zeno/releases/latest). One click, desktop shortcut, done. There's also a portable exe if you don't like installers, it just needs about half a minute to unpack itself on each launch.
 
-Needs [Node.js](https://nodejs.org) 18 or newer and Windows.
+Windows will probably show a SmartScreen warning because the app isn't code signed. Click More info, then Run anyway.
+
+Running from source needs Node 18 or newer:
 
 ```
 git clone https://github.com/iamyakay/zeno.git
@@ -35,37 +21,44 @@ npm install
 npm start
 ```
 
-First launch: open CONFIG, paste your OpenRouter API key (free at [openrouter.ai/keys](https://openrouter.ai/keys)) and hit save. That's it.
+Whichever way you install, open CONFIG on first launch, paste an OpenRouter API key (free at [openrouter.ai/keys](https://openrouter.ai/keys)) and hit save. The image generator and the PC commands work even without a key.
 
-Double click `ZENO.bat` to launch it like a normal app, or run `make-shortcut.ps1` once to get a desktop shortcut.
+## What it does
 
-## Commands it understands
+You talk to it. Click the globe, say what you want, and it answers out loud. Replies stream in as they generate. Turn on the wake word in CONFIG and you can just say "hey zeno" from across the room without touching anything.
+
+It controls your computer. Ask it to open sites and apps, search the web, change the volume, lock the screen, take screenshots, empty the recycle bin or shut the PC down on a timer. There's a live HUD around the globe showing cpu, memory, disk and uptime, and asking "system status" gets you a spoken report.
+
+It sees things. Attach an image and ask about it, or say "look at my screen" and ZENO screenshots your display and tells you what's there. Drop a text file into the window and ask questions about its contents. Say "generate an image of whatever" and a picture appears in the chat.
+
+It remembers. Tell it to remember something and that survives restarts. It keeps a todo list in a panel next to the globe, saves every conversation into a history browser you can resume from, and picks up your clipboard when you ask it to summarize, translate or fix whatever you copied.
+
+The multi-AI consensus mode is my favorite part. Flip the toggle and your question goes to several models at once, each with a live timer racing next to it, and a judge model merges what they agree on. When they disagree you get told what's disputed instead of one model's confident guess.
+
+If none of that fits what you need, the personality is editable in CONFIG and the whole command layer is extendable through plugins.
+
+## The commands
 
 ```
-open browser / youtube / github / spotify / gmail / netflix ...
-open notepad / calculator / paint / explorer / terminal
-open downloads / documents / pictures / desktop
-open anysite.com
-search <anything>
-generate an image of <anything>
-imagine <anything>
-weather in <city>
-time in <city>
-system status
-volume up / volume down / mute
-lock the pc
-take a screenshot
-empty the recycle bin
-shutdown in 10 minutes / cancel shutdown
-remember <anything> / what do you remember / forget everything
-roll a d20 / flip a coin
+open youtube / github / spotify / notepad / calculator / downloads / anysite.com
+search best mechanical keyboards
+generate an image of a neon samurai
+look at my screen
+weather in tokyo          time in new york
+system status             take a screenshot
+volume up / mute          lock the pc
+shutdown in 10 minutes    cancel shutdown
+remember my exam is friday
+add buy milk to my list   done buy milk
+summarize my clipboard    translate my clipboard to spanish
+roll a d20                flip a coin
 ```
 
-Everything also works by voice. Click the globe, say it, it happens. Enable the wake word and you don't even have to click.
+Everything in that list also works by voice.
 
 ## Plugins
 
-Any js file in `plugins/` becomes a command. A plugin exports a name, a pattern and a run function:
+Drop a js file into the `plugins` folder (or into `plugins` inside ZENO's user data folder if you installed the exe) and restart. A plugin is just a name, a regex and a function:
 
 ```js
 module.exports = {
@@ -78,19 +71,16 @@ module.exports = {
 };
 ```
 
-`ctx` gives you `fetch`, `openUrl` and `ps` for PowerShell. Whatever you return gets shown and spoken. Restart the app to load new plugins.
+Whatever you return gets shown in the chat and spoken. The `ctx` object hands you `fetch`, `openUrl` and `ps` for running PowerShell. The dice roller that ships with the app is a working example.
 
-## Config
+## How the code is laid out
 
-All settings live in the CONFIG view inside the app: API key, base URL, primary model, vision model, judge model, the consensus squad, theme, voice and your name. Stored locally in your user folder, nothing leaves your machine except the API calls you make.
+The main process lives in `lib`: config handling, the json stores, the OpenRouter client, the system layer that talks to Windows, plugin loading and the update check are separate modules that `main.js` wires together. The renderer side splits the same way, `js/globe.js` draws the planet, `js/voice.js` handles speech, `js/engine.js` runs conversations and consensus, `js/markdown.js` and `js/commands.js` do rendering and intent parsing, and `js/app.js` glues the UI together.
+
+Settings and data are plain json files in your user folder. Nothing leaves your machine except the API calls you make.
 
 ## Credits
 
-Made by Zap
+Made by Zap. GitHub [iamyakay](https://github.com/iamyakay), Discord Sethlowk.
 
-- GitHub: [iamyakay](https://github.com/iamyakay)
-- Discord: Sethlowk
-
-## License
-
-MIT
+MIT licensed, do what you want with it.
