@@ -244,6 +244,18 @@
         addMessage(logId, "zeno", "memory wiped.");
         return;
       }
+      const weather = lowered.match(/^(?:what(?:'s| is) the )?weather(?: like)?(?: (?:in|at|for) (.+))?$/);
+      if (weather) {
+        if (!weather[1]) {
+          addMessage(logId, "zeno", "which city? say: weather in tokyo");
+          return;
+        }
+        return reportWeather(logId, weather[1]);
+      }
+      const timeAsk = lowered.match(/^(?:what(?:'s| is) the )?time(?: (?:in|at) (.+))?$/);
+      if (timeAsk) {
+        return reportTime(logId, timeAsk[1] || null);
+      }
       const action = parseAction(trimmed);
       if (action) {
         return runAction(logId, action);
@@ -543,6 +555,42 @@
     const text = `system status: ${parts.join(", ")}. all nominal.`;
     addMessage(logId, "zeno", text);
     if ($("core-voice").checked) window.ZenoVoice.speak(text);
+  }
+
+  async function reportWeather(logId, city) {
+    setBusy(true);
+    const thinkingRow = addThinking(logId);
+    const wx = await window.zeno.getWeather(city);
+    thinkingRow.remove();
+    setBusy(false);
+    if (!wx.ok) {
+      addMessage(logId, "zeno", wx.error);
+      return;
+    }
+    const text = `${wx.place}: ${wx.sky}, ${Math.round(wx.temp)}°C (feels like ${Math.round(wx.feels)}°C), humidity ${wx.humidity}%, wind ${Math.round(wx.wind)} km/h`;
+    addMessage(logId, "zeno", text);
+    if ($("core-voice").checked) {
+      window.ZenoVoice.speak(`${wx.place}. ${wx.sky}, ${Math.round(wx.temp)} degrees, feels like ${Math.round(wx.feels)}`);
+    }
+  }
+
+  async function reportTime(logId, city) {
+    if (!city) {
+      const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      addMessage(logId, "zeno", `it's ${now}`);
+      if ($("core-voice").checked) window.ZenoVoice.speak(`it's ${now}`);
+      return;
+    }
+    setBusy(true);
+    const wx = await window.zeno.getWeather(city);
+    setBusy(false);
+    if (!wx.ok || !wx.timezone) {
+      addMessage(logId, "zeno", wx.error || `couldn't find the timezone for ${city}`);
+      return;
+    }
+    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: wx.timezone });
+    addMessage(logId, "zeno", `${wx.place}: ${now}`);
+    if ($("core-voice").checked) window.ZenoVoice.speak(`in ${wx.place} it's ${now}`);
   }
 
   async function loadBalance() {

@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("zeno", {
   memAdd: (fact) => ipcRenderer.invoke("mem:add", fact),
   memClear: () => ipcRenderer.invoke("mem:clear"),
   onWake: (callback) => ipcRenderer.on("zeno:wake", callback),
+  getWeather: (city) => ipcRenderer.invoke("net:weather", city),
   listModels: () => ipcRenderer.invoke("ai:models"),
   getCredits: () => ipcRenderer.invoke("ai:credits"),
   openExternal: (url) => ipcRenderer.invoke("open:external", url)

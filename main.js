@@ -354,6 +354,46 @@ function runPs(script, timeoutMs = 20000) {
   });
 }
 
+const WEATHER_CODES = {
+  0: "clear sky", 1: "mostly clear", 2: "partly cloudy", 3: "overcast",
+  45: "fog", 48: "icy fog", 51: "light drizzle", 53: "drizzle", 55: "heavy drizzle",
+  61: "light rain", 63: "rain", 65: "heavy rain", 66: "freezing rain", 67: "heavy freezing rain",
+  71: "light snow", 73: "snow", 75: "heavy snow", 77: "snow grains",
+  80: "light showers", 81: "showers", 82: "violent showers",
+  85: "snow showers", 86: "heavy snow showers",
+  95: "thunderstorm", 96: "thunderstorm with hail", 99: "thunderstorm with heavy hail"
+};
+
+ipcMain.handle("net:weather", async (_event, city) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  try {
+    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`, { signal: controller.signal });
+    const geo = await geoRes.json();
+    const place = geo?.results?.[0];
+    if (!place) return { ok: false, error: `couldn't find a place called ${city}` };
+    const wxRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`, { signal: controller.signal });
+    const wx = await wxRes.json();
+    const current = wx?.current;
+    if (!current) return { ok: false, error: "weather service gave no data" };
+    return {
+      ok: true,
+      place: `${place.name}${place.country ? ", " + place.country : ""}`,
+      timezone: wx.timezone,
+      temp: current.temperature_2m,
+      feels: current.apparent_temperature,
+      humidity: current.relative_humidity_2m,
+      wind: current.wind_speed_10m,
+      sky: WEATHER_CODES[current.weather_code] || "unknown conditions"
+    };
+  } catch (error) {
+    const message = error?.name === "AbortError" ? "weather lookup timed out" : String(error?.message || error);
+    return { ok: false, error: message };
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
 const APP_COMMANDS = {
   notepad: ["notepad.exe"],
   calculator: ["calc.exe"],
