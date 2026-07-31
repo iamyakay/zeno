@@ -90,6 +90,7 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(permission === "media" || permission === "audioCapture");
   });
+  loadPlugins();
   createWindow();
   setWakeEnabled(loadConfig().wakeWord);
   app.on("activate", () => {
@@ -357,8 +358,7 @@ function runPs(script, timeoutMs = 20000) {
 
 const plugins = new Map();
 
-function loadPlugins() {
-  const dir = path.join(__dirname, "plugins");
+function loadPluginsFrom(dir) {
   let files = [];
   try {
     files = fs.readdirSync(dir).filter((f) => f.endsWith(".js"));
@@ -377,7 +377,12 @@ function loadPlugins() {
   }
 }
 
-loadPlugins();
+function loadPlugins() {
+  loadPluginsFrom(path.join(__dirname, "plugins"));
+  const userDir = path.join(app.getPath("userData"), "plugins");
+  fs.mkdirSync(userDir, { recursive: true });
+  loadPluginsFrom(userDir);
+}
 
 ipcMain.handle("plugins:list", () => {
   return [...plugins.values()].map((p) => ({

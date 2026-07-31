@@ -4,11 +4,31 @@
   "description": "ZENO, a personal AI command center",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "dev.zap.zeno",
+    "productName": "ZENO",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "css/**",
+      "js/**",
+      "plugins/**",
+      "assets/**"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
   },
   "author": "Zap",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^31.7.7"
+    "electron": "^31.7.7",
+    "electron-builder": "^26.15.3"
   }
 }
