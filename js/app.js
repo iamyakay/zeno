@@ -24,6 +24,49 @@
   }
 
   let pluginList = [];
+  let docContext = null;
+
+  function activeLog() {
+    return document.querySelector("#view-chat.active") ? "chat-log" : "core-transcript";
+  }
+
+  const TEXT_FILE = /\.(txt|md|markdown|json|js|ts|jsx|tsx|py|html|css|csv|log|xml|yml|yaml|ini|toml|bat|ps1|sh|c|cpp|h|java|rs|go|sql)$/i;
+
+  document.addEventListener("dragover", (event) => event.preventDefault());
+
+  document.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+    const logId = activeLog();
+    if (/^image\//.test(file.type)) {
+      if (file.size > 8 * 1024 * 1024) {
+        addMessage(logId, "zeno", "image too big, keep it under 8 MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingImage = reader.result;
+        const label = `attached: ${file.name}`;
+        $("core-attach-name").textContent = label;
+        $("chat-attach-name").textContent = label;
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+    if (!TEXT_FILE.test(file.name)) {
+      addMessage(logId, "zeno", "can't read that file type, drop a text file like .txt, .md or code");
+      return;
+    }
+    if (file.size > 400 * 1024) {
+      addMessage(logId, "zeno", "file too big, keep it under 400 KB");
+      return;
+    }
+    const text = await file.text();
+    docContext = { name: file.name, text: text.slice(0, 80000), used: false };
+    const kb = (file.size / 1024).toFixed(0);
+    addMessage(logId, "zeno", `loaded ${file.name} (${kb} KB). ask me anything about it, say "clear file" when you're done.`);
+  });
 
   async function bootStep(percent, text) {
     $("boot-bar-fill").style.width = `${percent}%`;
@@ -403,6 +446,11 @@
       if (timeAsk) {
         return reportTime(logId, timeAsk[1] || null);
       }
+      if (/^(?:clear|unload|forget)\s+(?:the\s+)?file$/.test(lowered)) {
+        docContext = null;
+        addMessage(logId, "zeno", "file unloaded.");
+        return;
+      }
       const cleaned = trimmed.replace(/^zeno[,.!\s]+/i, "");
       for (const plugin of pluginList) {
         if (plugin.regex.test(cleaned)) {
@@ -427,6 +475,12 @@
         addMessage(logId, "zeno", "tell me what to draw, like: generate an image of a neon city at night");
         return;
       }
+    }
+
+    let prompt = trimmed;
+    if (docContext && !docContext.used && trimmed) {
+      prompt = `The user loaded a file named ${docContext.name}. Its contents:\n\n${docContext.text}\n\nQuestion about it: ${trimmed}`;
+      docContext.used = true;
     }
 
     const image = pendingImage;
@@ -457,9 +511,9 @@
 
     let result;
     if (useConsensus) {
-      result = await window.ZenoEngine.askConsensus(config, trimmed, image, renderAgents);
+      result = await window.ZenoEngine.askConsensus(config, prompt, image, renderAgents);
     } else {
-      result = await window.ZenoEngine.askSingle(config, trimmed, image, onDelta);
+      result = await window.ZenoEngine.askSingle(config, prompt, image, onDelta);
     }
 
     if (thinkingRow.isConnected) thinkingRow.remove();
