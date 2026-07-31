@@ -3,9 +3,12 @@
   const MAX_TURNS = 24;
 
   function systemPrompt(config) {
+    const persona = String(config.persona || "").trim();
     const lines = [
       `You are ZENO, ${config.userName || "the user"}'s personal AI command center running as a desktop app.`,
-      "Personality: sharp, calm, a little dry. Like a competent operator, not a cheerleader.",
+      persona
+        ? `Personality: ${persona}. Stay in character.`
+        : "Personality: sharp, calm, a little dry. Like a competent operator, not a cheerleader.",
       "Keep answers tight and useful. Use short paragraphs. No emoji unless asked.",
       "If you are unsure, say so plainly instead of guessing.",
       "The app around you can also open websites and apps (user says: open youtube, open notepad), run web searches (search for ...), and generate images (generate an image of ...).",

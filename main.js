@@ -22,7 +22,8 @@ const defaultConfig = {
   voiceReplies: true,
   wakeWord: false,
   theme: "green",
-  userName: "Zap"
+  userName: "Zap",
+  persona: ""
 };
 
 const retiredModels = new Set([

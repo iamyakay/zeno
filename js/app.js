@@ -735,6 +735,7 @@
     $("cfg-voice").checked = Boolean(config.voiceReplies);
     $("cfg-consensus").checked = Boolean(config.consensusEnabled);
     $("cfg-wake").checked = Boolean(config.wakeWord);
+    $("cfg-persona").value = config.persona || "";
   }
 
   $("cfg-save").addEventListener("click", async () => {
@@ -749,7 +750,8 @@
       userName: $("cfg-name").value.trim() || "operator",
       voiceReplies: $("cfg-voice").checked,
       consensusEnabled: $("cfg-consensus").checked,
-      wakeWord: $("cfg-wake").checked
+      wakeWord: $("cfg-wake").checked,
+      persona: $("cfg-persona").value.trim()
     });
     config.memory = await window.zeno.memList();
     document.body.dataset.theme = config.theme;
