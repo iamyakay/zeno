@@ -45,6 +45,7 @@
     loadBalance();
     pollStats();
     setInterval(pollStats, 2500);
+    refreshTodoPanel();
   }
 
   function greet() {
@@ -471,6 +472,32 @@
         };
         return askDirect(logId, `${prompts[clip[1]]}\n\n${content.slice(0, 6000)}`, null, `clipboard ${clip[1]}`);
       }
+      const todoAdd = lowered.match(/^(?:add\s+(.+?)\s+to\s+(?:my\s+|the\s+)?(?:todo\s+)?list|todo\s+(.+))$/);
+      if (todoAdd) {
+        await window.zeno.todoAdd(todoAdd[1] || todoAdd[2]);
+        refreshTodoPanel();
+        addMessage(logId, "zeno", "added to your list.");
+        if ($("core-voice").checked) window.ZenoVoice.speak("added");
+        return;
+      }
+      if (/^(?:show\s+|what(?:'s| is)\s+on\s+)(?:my\s+|the\s+)?(?:todo\s+)?list$|^show\s+todos$/.test(lowered)) {
+        const todos = await window.zeno.todoList();
+        addMessage(logId, "zeno", todos.length === 0 ? "your list is empty" : todos.map((t, i) => `${i + 1}. ${t.text}`).join("\n"));
+        return;
+      }
+      const todoDone = lowered.match(/^(?:done|complete|finished|tick off|check off)\s+(.+?)(?:\s+from\s+(?:my\s+|the\s+)?list)?$/);
+      if (todoDone) {
+        const result = await window.zeno.todoDone(todoDone[1]);
+        refreshTodoPanel();
+        addMessage(logId, "zeno", result.removed ? `nice. crossed off: ${result.removed}` : `couldn't find that on your list`);
+        return;
+      }
+      if (/^clear\s+(?:my\s+|the\s+)?(?:todo\s+)?list$/.test(lowered)) {
+        await window.zeno.todoClear();
+        refreshTodoPanel();
+        addMessage(logId, "zeno", "list cleared.");
+        return;
+      }
       if (/^copy\s+(?:that|last(?:\s+reply)?|reply)$/.test(lowered)) {
         if (lastZenoReply) {
           await window.zeno.clipboardWrite(lastZenoReply);
@@ -806,6 +833,32 @@
     const text = `system status: ${parts.join(", ")}. all nominal.`;
     addMessage(logId, "zeno", text);
     if ($("core-voice").checked) window.ZenoVoice.speak(text);
+  }
+
+  async function refreshTodoPanel() {
+    try {
+      const todos = await window.zeno.todoList();
+      const panel = $("todo-panel");
+      const items = $("todo-items");
+      items.innerHTML = "";
+      if (todos.length === 0) {
+        panel.classList.add("off");
+        return;
+      }
+      panel.classList.remove("off");
+      for (const todo of todos.slice(0, 7)) {
+        const row = document.createElement("div");
+        row.className = "todo-row";
+        row.textContent = todo.text;
+        items.appendChild(row);
+      }
+      if (todos.length > 7) {
+        const row = document.createElement("div");
+        row.className = "todo-row";
+        row.textContent = `+${todos.length - 7} more`;
+        items.appendChild(row);
+      }
+    } catch {}
   }
 
   async function askDirect(logId, question, imageDataUrl, meta) {

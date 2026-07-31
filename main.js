@@ -652,6 +652,47 @@ ipcMain.handle("chats:delete", (_event, id) => {
   return true;
 });
 
+const todosPath = path.join(app.getPath("userData"), "zeno-todos.json");
+
+function loadTodos() {
+  try {
+    const data = JSON.parse(fs.readFileSync(todosPath, "utf8"));
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeTodos(todos) {
+  fs.mkdirSync(path.dirname(todosPath), { recursive: true });
+  fs.writeFileSync(todosPath, JSON.stringify(todos, null, 2));
+}
+
+ipcMain.handle("todo:list", () => loadTodos());
+
+ipcMain.handle("todo:add", (_event, text) => {
+  const todos = loadTodos();
+  todos.push({ text: String(text).slice(0, 200), at: new Date().toISOString() });
+  while (todos.length > 50) todos.shift();
+  writeTodos(todos);
+  return todos;
+});
+
+ipcMain.handle("todo:done", (_event, match) => {
+  const todos = loadTodos();
+  const needle = String(match).toLowerCase();
+  const index = todos.findIndex((t) => t.text.toLowerCase().includes(needle));
+  if (index === -1) return { removed: null, todos };
+  const [removed] = todos.splice(index, 1);
+  writeTodos(todos);
+  return { removed: removed.text, todos };
+});
+
+ipcMain.handle("todo:clear", () => {
+  writeTodos([]);
+  return [];
+});
+
 const memoryPath = path.join(app.getPath("userData"), "zeno-memory.json");
 
 function loadMemory() {
