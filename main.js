@@ -20,6 +20,7 @@ const defaultConfig = {
   judgeModel: "google/gemma-4-26b-a4b-it:free",
   consensusEnabled: false,
   voiceReplies: true,
+  wakeWord: false,
   theme: "green",
   userName: "Zap"
 };
@@ -89,9 +90,15 @@ app.whenReady().then(() => {
     callback(permission === "media" || permission === "audioCapture");
   });
   createWindow();
+  setWakeEnabled(loadConfig().wakeWord);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on("before-quit", () => {
+  wakeEnabled = false;
+  stopWake();
 });
 
 app.on("window-all-closed", () => {
@@ -103,6 +110,7 @@ ipcMain.handle("config:get", () => loadConfig());
 ipcMain.handle("config:set", (_event, partial) => {
   const next = { ...loadConfig(), ...partial };
   saveConfig(next);
+  if ("wakeWord" in partial) setWakeEnabled(next.wakeWord);
   return next;
 });
 
@@ -179,6 +187,56 @@ ipcMain.handle("ai:models", async () => {
   }
 });
 
+let wakeChild = null;
+let wakeEnabled = false;
+
+const WAKE_SCRIPT = [
+  "Add-Type -AssemblyName System.Speech",
+  "$rec = New-Object System.Speech.Recognition.SpeechRecognitionEngine",
+  "$rec.SetInputToDefaultAudioDevice()",
+  "$choices = New-Object System.Speech.Recognition.Choices(@('hey zeno', 'zeno', 'okay zeno'))",
+  "$gb = New-Object System.Speech.Recognition.GrammarBuilder",
+  "$gb.Append($choices)",
+  "$rec.LoadGrammar((New-Object System.Speech.Recognition.Grammar($gb)))",
+  "while ($true) { $r = $rec.Recognize(); if ($r -and $r.Confidence -gt 0.82) { Write-Output 'WAKE'; [Console]::Out.Flush() } }"
+].join("; ");
+
+function startWake() {
+  if (wakeChild || !wakeEnabled) return;
+  try {
+    wakeChild = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", WAKE_SCRIPT], {
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true
+    });
+  } catch {
+    wakeChild = null;
+    return;
+  }
+  wakeChild.stdout.on("data", (chunk) => {
+    if (chunk.toString().includes("WAKE") && win && !win.isDestroyed()) {
+      win.webContents.send("zeno:wake");
+    }
+  });
+  wakeChild.on("close", () => {
+    wakeChild = null;
+    if (wakeEnabled) setTimeout(startWake, 1500);
+  });
+}
+
+function stopWake() {
+  if (wakeChild) {
+    const child = wakeChild;
+    wakeChild = null;
+    try { child.removeAllListeners("close"); child.kill(); } catch {}
+  }
+}
+
+function setWakeEnabled(enabled) {
+  wakeEnabled = Boolean(enabled);
+  if (wakeEnabled) startWake();
+  else stopWake();
+}
+
 let listenChild = null;
 
 const LISTEN_SCRIPT = [
@@ -194,6 +252,7 @@ const LISTEN_SCRIPT = [
 
 ipcMain.handle("os:listen", () => {
   return new Promise((resolve) => {
+    stopWake();
     if (listenChild) {
       try { listenChild.kill(); } catch {}
       listenChild = null;
@@ -226,6 +285,7 @@ ipcMain.handle("os:listen", () => {
     });
     listenChild.on("close", () => {
       clearTimeout(killTimer);
+      if (wakeEnabled) setTimeout(startWake, 500);
       const text = output.trim();
       if (text) {
         finish({ ok: true, text });

@@ -405,6 +405,14 @@
     startVoice($("core-input"), $("core-mic-btn"), "core-transcript", $("core-consensus"));
   });
 
+  window.zeno.onWake(() => {
+    if (busy || window.ZenoVoice.listening) return;
+    window.ZenoVoice.speak("yes?");
+    setTimeout(() => {
+      startVoice($("core-input"), $("core-mic-btn"), "core-transcript", $("core-consensus"));
+    }, 700);
+  });
+
   function closeSidebar() {
     document.body.classList.remove("nav-open");
   }
@@ -436,6 +444,7 @@
     $("cfg-name").value = config.userName || "";
     $("cfg-voice").checked = Boolean(config.voiceReplies);
     $("cfg-consensus").checked = Boolean(config.consensusEnabled);
+    $("cfg-wake").checked = Boolean(config.wakeWord);
   }
 
   $("cfg-save").addEventListener("click", async () => {
@@ -449,8 +458,10 @@
       theme: $("cfg-theme").value,
       userName: $("cfg-name").value.trim() || "operator",
       voiceReplies: $("cfg-voice").checked,
-      consensusEnabled: $("cfg-consensus").checked
+      consensusEnabled: $("cfg-consensus").checked,
+      wakeWord: $("cfg-wake").checked
     });
+    config.memory = await window.zeno.memList();
     document.body.dataset.theme = config.theme;
     $("core-consensus").checked = config.consensusEnabled;
     $("chat-consensus").checked = config.consensusEnabled;
