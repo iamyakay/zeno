@@ -22,9 +22,19 @@
     }, 600);
   }
 
+  let pluginList = [];
+
   async function boot() {
     config = await window.zeno.getConfig();
     config.memory = await window.zeno.memList();
+    try {
+      pluginList = (await window.zeno.pluginsList()).map((p) => ({
+        ...p,
+        regex: new RegExp(p.pattern.source, p.pattern.flags)
+      }));
+    } catch {
+      pluginList = [];
+    }
     document.body.dataset.theme = config.theme || "green";
     $("core-consensus").checked = Boolean(config.consensusEnabled);
     $("chat-consensus").checked = Boolean(config.consensusEnabled);
@@ -450,6 +460,18 @@
       const timeAsk = lowered.match(/^(?:what(?:'s| is) the )?time(?: (?:in|at) (.+))?$/);
       if (timeAsk) {
         return reportTime(logId, timeAsk[1] || null);
+      }
+      const cleaned = trimmed.replace(/^zeno[,.!\s]+/i, "");
+      for (const plugin of pluginList) {
+        if (plugin.regex.test(cleaned)) {
+          setBusy(true);
+          const result = await window.zeno.pluginsRun(plugin.name, cleaned);
+          setBusy(false);
+          const reply = result.ok ? result.text : `plugin ${plugin.name} failed: ${result.error}`;
+          addMessage(logId, "zeno", reply, null, `plugin: ${plugin.name}`);
+          if ($("core-voice").checked && result.ok) window.ZenoVoice.speak(result.text);
+          return;
+        }
       }
       const action = parseAction(trimmed);
       if (action) {

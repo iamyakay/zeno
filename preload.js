@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld("zeno", {
   chatsSave: (session) => ipcRenderer.invoke("chats:save", session),
   chatsLoad: (id) => ipcRenderer.invoke("chats:load", id),
   chatsDelete: (id) => ipcRenderer.invoke("chats:delete", id),
+  pluginsList: () => ipcRenderer.invoke("plugins:list"),
+  pluginsRun: (name, input) => ipcRenderer.invoke("plugins:run", { name, input }),
   listModels: () => ipcRenderer.invoke("ai:models"),
   getCredits: () => ipcRenderer.invoke("ai:credits"),
   openExternal: (url) => ipcRenderer.invoke("open:external", url)

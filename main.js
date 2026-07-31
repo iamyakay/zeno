@@ -354,6 +354,57 @@ function runPs(script, timeoutMs = 20000) {
   });
 }
 
+const plugins = new Map();
+
+function loadPlugins() {
+  const dir = path.join(__dirname, "plugins");
+  let files = [];
+  try {
+    files = fs.readdirSync(dir).filter((f) => f.endsWith(".js"));
+  } catch {
+    return;
+  }
+  for (const file of files) {
+    try {
+      const plugin = require(path.join(dir, file));
+      if (plugin?.name && plugin?.pattern instanceof RegExp && typeof plugin.run === "function") {
+        plugins.set(plugin.name, plugin);
+      }
+    } catch (error) {
+      console.error(`plugin ${file} failed to load:`, error?.message);
+    }
+  }
+}
+
+loadPlugins();
+
+ipcMain.handle("plugins:list", () => {
+  return [...plugins.values()].map((p) => ({
+    name: p.name,
+    description: p.description || "",
+    pattern: { source: p.pattern.source, flags: p.pattern.flags }
+  }));
+});
+
+ipcMain.handle("plugins:run", async (_event, payload) => {
+  const plugin = plugins.get(payload?.name);
+  if (!plugin) return { ok: false, error: "plugin not found" };
+  try {
+    const ctx = {
+      fetch,
+      openUrl: (url) => { if (/^https?:\/\//i.test(url)) shell.openExternal(url); },
+      ps: runPs
+    };
+    const reply = await Promise.race([
+      plugin.run(String(payload.input || ""), ctx),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("plugin timed out")), 30000))
+    ]);
+    return { ok: true, text: String(reply ?? "done") };
+  } catch (error) {
+    return { ok: false, error: String(error?.message || error) };
+  }
+});
+
 const WEATHER_CODES = {
   0: "clear sky", 1: "mostly clear", 2: "partly cloudy", 3: "overcast",
   45: "fog", 48: "icy fog", 51: "light drizzle", 53: "drizzle", 55: "heavy drizzle",
