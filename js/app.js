@@ -149,6 +149,10 @@
       const word = target.replace(/\s+app$/, "");
       if (APP_NAMES.has(word)) return { type: "app", name: word };
       if (SITE_NAMES.has(word)) return { type: "site", name: word };
+      const folder = word.replace(/\s+folder$/, "");
+      if (["downloads", "documents", "pictures", "music", "videos", "desktop", "home"].includes(folder)) {
+        return { type: "folder", name: folder };
+      }
       return null;
     }
     m = t.match(/^(?:search|google)\s+(?:for\s+)?(.+)$/);

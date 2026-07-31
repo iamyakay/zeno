@@ -451,6 +451,23 @@ ipcMain.handle("os:action", async (_event, action) => {
     if (action.type === "system") {
       return runSystemCommand(action);
     }
+    if (action.type === "folder") {
+      const map = {
+        downloads: "downloads",
+        documents: "documents",
+        pictures: "pictures",
+        music: "music",
+        videos: "videos",
+        desktop: "desktop",
+        home: "home"
+      };
+      const key = map[action.name];
+      if (!key) return { ok: false, error: `unknown folder ${action.name}` };
+      const folder = app.getPath(key);
+      const child = spawn("explorer.exe", [folder], { detached: true, stdio: "ignore" });
+      child.unref();
+      return { ok: true, detail: folder };
+    }
     return { ok: false, error: "unknown action" };
   } catch (error) {
     return { ok: false, error: String(error?.message || error) };
