@@ -43,10 +43,29 @@
     return messages;
   }
 
-  async function askSingle(config, userText, imageDataUrl) {
+  let streamCounter = 0;
+  const streamHandlers = new Map();
+
+  window.zeno.onAiDelta((payload) => {
+    streamHandlers.get(payload.id)?.(payload.text);
+  });
+
+  async function askSingle(config, userText, imageDataUrl, onDelta) {
     const model = imageDataUrl ? config.visionModel : config.primaryModel;
     const messages = buildMessages(config, userText, imageDataUrl);
-    const result = await window.zeno.chat({ model, messages });
+    let result;
+    if (typeof onDelta === "function") {
+      streamCounter += 1;
+      const id = `s${streamCounter}`;
+      streamHandlers.set(id, onDelta);
+      try {
+        result = await window.zeno.chatStream({ id, model, messages });
+      } finally {
+        streamHandlers.delete(id);
+      }
+    } else {
+      result = await window.zeno.chat({ model, messages });
+    }
     if (result.ok) {
       pushHistory("user", userText || "[image]");
       pushHistory("assistant", result.text);

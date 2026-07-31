@@ -435,11 +435,56 @@
     clearAgents();
     const thinkingRow = addThinking(logId);
 
-    const ask = useConsensus ? window.ZenoEngine.askConsensus : window.ZenoEngine.askSingle;
-    const result = await ask(config, trimmed, image, renderAgents);
+    const log = $(logId);
+    const live = { wrap: null, body: null, buffer: "" };
+    const onDelta = (delta) => {
+      if (!live.wrap) {
+        thinkingRow.remove();
+        live.wrap = document.createElement("div");
+        live.wrap.className = "msg zeno";
+        const label = document.createElement("div");
+        label.className = "who";
+        label.textContent = "ZENO";
+        live.body = document.createElement("div");
+        live.body.className = "body";
+        live.wrap.append(label, live.body);
+        log.appendChild(live.wrap);
+      }
+      live.buffer += delta;
+      live.body.textContent = live.buffer;
+      log.scrollTop = log.scrollHeight;
+    };
 
-    thinkingRow.remove();
+    let result;
+    if (useConsensus) {
+      result = await window.ZenoEngine.askConsensus(config, trimmed, image, renderAgents);
+    } else {
+      result = await window.ZenoEngine.askSingle(config, trimmed, image, onDelta);
+    }
+
+    if (thinkingRow.isConnected) thinkingRow.remove();
     setBusy(false);
+
+    if (live.wrap) {
+      if (result.ok) {
+        lastZenoReply = result.text;
+        if (window.ZenoMd.hasMarkdown(result.text)) {
+          live.body.textContent = "";
+          window.ZenoMd.render(live.body, result.text);
+        } else {
+          live.body.textContent = result.text;
+        }
+        const metaEl = document.createElement("div");
+        metaEl.className = "meta";
+        metaEl.textContent = result.model;
+        live.wrap.appendChild(metaEl);
+        log.scrollTop = log.scrollHeight;
+        recordMessage("zeno", result.text, result.model);
+        if ($("core-voice").checked) window.ZenoVoice.speak(result.text);
+        return;
+      }
+      live.wrap.remove();
+    }
 
     if (!result.ok) {
       addMessage(logId, "zeno", `error: ${result.error}`, null, `model: ${result.model}`);
