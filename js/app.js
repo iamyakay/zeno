@@ -7,6 +7,7 @@
 
   async function boot() {
     config = await window.zeno.getConfig();
+    config.memory = await window.zeno.memList();
     document.body.dataset.theme = config.theme || "green";
     $("core-consensus").checked = Boolean(config.consensusEnabled);
     $("chat-consensus").checked = Boolean(config.consensusEnabled);
@@ -221,6 +222,27 @@
       const lowered = trimmed.toLowerCase().replace(/^zeno[,.!\s]+/, "").replace(/[.!?]+$/, "");
       if (/^(?:system\s+status|status\s+report|how(?:'s| is) the (?:system|pc))$/.test(lowered)) {
         return speakSystemStatus(logId);
+      }
+      const remember = trimmed.replace(/^zeno[,.!\s]+/i, "").match(/^remember\s+(?:that\s+)?(.+)$/i);
+      if (remember) {
+        config.memory = await window.zeno.memAdd(remember[1]);
+        addMessage(logId, "zeno", "remembered.");
+        if ($("core-voice").checked) window.ZenoVoice.speak("remembered");
+        return;
+      }
+      if (/^(?:what\s+do\s+you\s+remember|show\s+(?:your\s+)?memor(?:y|ies)|list\s+memor(?:y|ies))$/.test(lowered)) {
+        const memory = config.memory || [];
+        if (memory.length === 0) {
+          addMessage(logId, "zeno", "nothing yet. tell me: remember <anything>");
+        } else {
+          addMessage(logId, "zeno", memory.map((m, i) => `${i + 1}. ${m.fact}`).join("\n"));
+        }
+        return;
+      }
+      if (/^(?:forget\s+everything|clear\s+(?:your\s+)?memory|wipe\s+memory)$/.test(lowered)) {
+        config.memory = await window.zeno.memClear();
+        addMessage(logId, "zeno", "memory wiped.");
+        return;
       }
       const action = parseAction(trimmed);
       if (action) {

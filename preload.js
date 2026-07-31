@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld("zeno", {
   genImage: (prompt) => ipcRenderer.invoke("ai:image", prompt),
   runAction: (action) => ipcRenderer.invoke("os:action", action),
   getStats: () => ipcRenderer.invoke("os:stats"),
+  memList: () => ipcRenderer.invoke("mem:list"),
+  memAdd: (fact) => ipcRenderer.invoke("mem:add", fact),
+  memClear: () => ipcRenderer.invoke("mem:clear"),
   listModels: () => ipcRenderer.invoke("ai:models"),
   getCredits: () => ipcRenderer.invoke("ai:credits"),
   openExternal: (url) => ipcRenderer.invoke("open:external", url)

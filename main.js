@@ -411,6 +411,33 @@ async function runSystemCommand(action) {
   return { ok: false, error: `unknown system command ${name}` };
 }
 
+const memoryPath = path.join(app.getPath("userData"), "zeno-memory.json");
+
+function loadMemory() {
+  try {
+    const data = JSON.parse(fs.readFileSync(memoryPath, "utf8"));
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+ipcMain.handle("mem:list", () => loadMemory());
+
+ipcMain.handle("mem:add", (_event, fact) => {
+  const memory = loadMemory();
+  memory.push({ fact: String(fact).slice(0, 500), at: new Date().toISOString() });
+  while (memory.length > 100) memory.shift();
+  fs.mkdirSync(path.dirname(memoryPath), { recursive: true });
+  fs.writeFileSync(memoryPath, JSON.stringify(memory, null, 2));
+  return memory;
+});
+
+ipcMain.handle("mem:clear", () => {
+  try { fs.unlinkSync(memoryPath); } catch {}
+  return [];
+});
+
 let lastCpuSnapshot = null;
 let cachedDisk = null;
 let cachedDiskAt = 0;

@@ -3,7 +3,7 @@
   const MAX_TURNS = 24;
 
   function systemPrompt(config) {
-    return [
+    const lines = [
       `You are ZENO, ${config.userName || "the user"}'s personal AI command center running as a desktop app.`,
       "Personality: sharp, calm, a little dry. Like a competent operator, not a cheerleader.",
       "Keep answers tight and useful. Use short paragraphs. No emoji unless asked.",
@@ -11,7 +11,12 @@
       "The app around you can also open websites and apps (user says: open youtube, open notepad), run web searches (search for ...), and generate images (generate an image of ...).",
       "If the user asks what you can do, mention those commands.",
       "Never reply with JSON, tool call syntax or action objects. Always answer in plain natural language, the app handles commands on its own."
-    ].join(" ");
+    ];
+    const memory = Array.isArray(config.memory) ? config.memory : [];
+    if (memory.length > 0) {
+      lines.push("Things the user asked you to remember: " + memory.map((m) => m.fact).join("; "));
+    }
+    return lines.join(" ");
   }
 
   function pushHistory(role, content) {
