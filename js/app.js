@@ -25,9 +25,18 @@
 
   let pluginList = [];
 
+  async function bootStep(percent, text) {
+    $("boot-bar-fill").style.width = `${percent}%`;
+    $("boot-line").textContent = text;
+    await new Promise((resolve) => setTimeout(resolve, 220));
+  }
+
   async function boot() {
+    await bootStep(15, "loading configuration...");
     config = await window.zeno.getConfig();
+    await bootStep(38, "restoring memory...");
     config.memory = await window.zeno.memList();
+    await bootStep(58, "linking plugins...");
     try {
       pluginList = (await window.zeno.pluginsList()).map((p) => ({
         ...p,
@@ -36,6 +45,7 @@
     } catch {
       pluginList = [];
     }
+    await bootStep(80, "spinning up the core...");
     document.body.dataset.theme = config.theme || "green";
     $("core-consensus").checked = Boolean(config.consensusEnabled);
     $("chat-consensus").checked = Boolean(config.consensusEnabled);
@@ -46,6 +56,9 @@
     pollStats();
     setInterval(pollStats, 2500);
     refreshTodoPanel();
+    await bootStep(100, "online");
+    $("boot-screen").classList.add("done");
+    setTimeout(() => $("boot-screen").remove(), 700);
   }
 
   function greet() {

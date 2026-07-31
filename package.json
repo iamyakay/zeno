@@ -21,8 +21,18 @@
     ],
     "win": {
       "target": [
+        "nsis",
         "portable"
       ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "runAfterFinish": true,
+      "artifactName": "ZENO-Setup-${version}.exe"
+    },
+    "portable": {
+      "splashImage": "build/splash.bmp",
+      "artifactName": "ZENO-portable-${version}.exe"
     }
   },
   "author": "Zap",
