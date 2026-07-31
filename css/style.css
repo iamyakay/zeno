@@ -548,6 +548,82 @@ button { font-family: var(--mono); cursor: pointer; }
   margin-top: 6px;
 }
 
+.md .md-code {
+  margin: 8px 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.md .md-code-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.md .md-code-head button {
+  padding: 2px 10px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 10px;
+  transition: all 140ms ease;
+}
+
+.md .md-code-head button:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+.md pre {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--accent);
+}
+
+.md code {
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.md .md-link {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.md .md-h1, .md .md-h2, .md .md-h3 {
+  margin: 8px 0 2px;
+  color: var(--accent);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.md .md-h1 { font-size: 15px; }
+.md .md-h2 { font-size: 14px; }
+.md .md-h3 { font-size: 13px; }
+
+.md .md-li { padding-left: 14px; position: relative; }
+
+.md .md-li::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+  color: var(--accent-dim);
+}
+
 .msg .meta {
   margin-top: 5px;
   font-size: 10px;
