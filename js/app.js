@@ -78,72 +78,6 @@
     window.ZenoGlobe.setMood(next ? "thinking" : "idle");
   }
 
-  function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
-
-  function inlineMd(text) {
-    return escapeHtml(text)
-      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-      .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
-      .replace(/`([^`\n]+)`/g, "<code>$1</code>")
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a class="md-link" data-url="$2">$1</a>');
-  }
-
-  function hasMarkdown(text) {
-    return /```|`[^`\n]+`|\*\*|^#{1,3}\s|^[-*]\s/m.test(text);
-  }
-
-  function renderMarkdown(container, text) {
-    container.classList.add("md");
-    const parts = text.split(/```(\w*)\n?/);
-    for (let i = 0; i < parts.length; i += 1) {
-      if (i % 2 === 1) {
-        const lang = parts[i];
-        const code = parts[i + 1] || "";
-        i += 1;
-        const block = document.createElement("div");
-        block.className = "md-code";
-        const head = document.createElement("div");
-        head.className = "md-code-head";
-        const langLabel = document.createElement("span");
-        langLabel.textContent = lang || "code";
-        const copyBtn = document.createElement("button");
-        copyBtn.type = "button";
-        copyBtn.textContent = "copy";
-        copyBtn.addEventListener("click", async () => {
-          await navigator.clipboard.writeText(code);
-          copyBtn.textContent = "copied";
-          setTimeout(() => { copyBtn.textContent = "copy"; }, 1400);
-        });
-        head.append(langLabel, copyBtn);
-        const pre = document.createElement("pre");
-        pre.textContent = code.replace(/\n$/, "");
-        block.append(head, pre);
-        container.appendChild(block);
-        continue;
-      }
-      const chunk = parts[i];
-      if (!chunk.trim()) continue;
-      const html = chunk
-        .split("\n")
-        .map((line) => {
-          const h = line.match(/^(#{1,3})\s+(.*)$/);
-          if (h) return `<div class="md-h${h[1].length}">${inlineMd(h[2])}</div>`;
-          const li = line.match(/^[-*]\s+(.*)$/);
-          if (li) return `<div class="md-li">${inlineMd(li[1])}</div>`;
-          return inlineMd(line);
-        })
-        .join("\n");
-      const span = document.createElement("span");
-      span.innerHTML = html;
-      container.appendChild(span);
-    }
-    for (const link of container.querySelectorAll(".md-link")) {
-      link.addEventListener("click", () => window.zeno.openExternal(link.dataset.url));
-    }
-  }
-
   function typeInto(el, text, log) {
     const total = text.length;
     if (total < 40) {
@@ -173,8 +107,8 @@
     if (who === "zeno") lastZenoReply = text;
     const body = document.createElement("div");
     body.className = "body";
-    if (who === "zeno" && hasMarkdown(text)) {
-      renderMarkdown(body, text);
+    if (who === "zeno" && window.ZenoMd.hasMarkdown(text)) {
+      window.ZenoMd.render(body, text);
     } else if (who === "zeno") {
       typeInto(body, text, log);
     } else {
@@ -212,8 +146,8 @@
     label.textContent = entry.who === "user" ? (config.userName || "YOU").toUpperCase() : "ZENO";
     const body = document.createElement("div");
     body.className = "body";
-    if (entry.who === "zeno" && hasMarkdown(entry.text)) {
-      renderMarkdown(body, entry.text);
+    if (entry.who === "zeno" && window.ZenoMd.hasMarkdown(entry.text)) {
+      window.ZenoMd.render(body, entry.text);
     } else {
       body.textContent = entry.text;
     }
@@ -335,69 +269,6 @@
     if (raceTimer) {
       clearInterval(raceTimer);
       raceTimer = null;
-    }
-  }
-
-  const APP_NAMES = new Set(["notepad", "calculator", "calc", "paint", "explorer", "files", "cmd", "terminal"]);
-  const SITE_NAMES = new Set(["browser", "google", "youtube", "github", "discord", "spotify", "reddit", "twitter", "x", "twitch", "gmail", "maps", "netflix", "openrouter"]);
-
-  function parseSystem(t) {
-    if (/^(?:turn\s+)?volume\s+up$|^louder$/.test(t)) return { type: "system", name: "volume-up" };
-    if (/^(?:turn\s+)?volume\s+down$|^quieter$/.test(t)) return { type: "system", name: "volume-down" };
-    if (/^(?:un)?mute(?:\s+(?:the\s+)?(?:pc|sound|audio|volume))?$/.test(t)) return { type: "system", name: "mute" };
-    if (/^lock(?:\s+(?:the\s+)?(?:pc|computer|screen))?$/.test(t)) return { type: "system", name: "lock" };
-    if (/^(?:take\s+a\s+)?screenshot$/.test(t)) return { type: "system", name: "screenshot" };
-    if (/^(?:empty|clear)\s+(?:the\s+)?(?:recycle\s+)?bin$/.test(t)) return { type: "system", name: "recycle" };
-    const shut = t.match(/^shut\s*down(?:\s+(?:the\s+)?(?:pc|computer))?(?:\s+in\s+(\d+)\s*min(?:ute)?s?)?$/);
-    if (shut) return { type: "system", name: "shutdown", minutes: shut[1] ? Number(shut[1]) : 1 };
-    if (/^(?:cancel|abort|stop)\s+(?:the\s+)?shut\s*down$/.test(t)) return { type: "system", name: "cancel-shutdown" };
-    return null;
-  }
-
-  function parseAction(text) {
-    const t = text.trim().toLowerCase().replace(/^zeno[,.!\s]+/, "").replace(/[.!?]+$/, "");
-    const system = parseSystem(t);
-    if (system) return system;
-    let m = t.match(/^(?:open|launch|start|go to)\s+(?:the\s+|my\s+|a\s+)?(.+)$/);
-    if (m) {
-      const target = m[1].trim();
-      if (/^https?:\/\//.test(target)) return { type: "url", url: target };
-      if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(target)) return { type: "url", url: `https://${target}` };
-      const word = target.replace(/\s+app$/, "");
-      if (APP_NAMES.has(word)) return { type: "app", name: word };
-      if (SITE_NAMES.has(word)) return { type: "site", name: word };
-      const folder = word.replace(/\s+folder$/, "");
-      if (["downloads", "documents", "pictures", "music", "videos", "desktop", "home"].includes(folder)) {
-        return { type: "folder", name: folder };
-      }
-      return null;
-    }
-    m = t.match(/^(?:search|google)\s+(?:for\s+)?(.+)$/);
-    if (m) return { type: "search", query: m[1] };
-    return null;
-  }
-
-  function parseImagePrompt(text) {
-    const t = text.trim().replace(/^zeno[,.!\s]+/i, "").replace(/[.!?]+$/, "");
-    let m = t.match(/^(?:generate|create|draw|make|paint)\s+(?:me\s+)?(?:an?\s+|some\s+)?(?:image|picture|photo|art|artwork|wallpaper|logo|icon)\s*(?:of|about|showing|with|:)?\s*(.*)$/i);
-    if (m) return m[1].trim();
-    m = t.match(/^(?:generate|create|draw|make|paint)\s+(?:me\s+)?(?:an?\s+|some\s+)?(.+?)\s+(?:image|picture|photo|art|artwork|wallpaper)$/i);
-    if (m) return m[1].trim();
-    m = t.match(/^imagine\s+(.+)$/i);
-    if (m) return m[1].trim();
-    return null;
-  }
-
-  function extractJsonAction(text) {
-    const match = text.match(/\{[\s\S]*?"action"\s*:\s*"([^"]+)"[\s\S]*?\}/);
-    if (!match) return null;
-    try {
-      const start = text.indexOf(match[0]);
-      const parsed = JSON.parse(text.slice(start, start + match[0].length));
-      const input = parsed.action_input || parsed.input || parsed.prompt || parsed.query || "";
-      return { action: String(parsed.action || "").toLowerCase(), input: String(input) };
-    } catch {
-      return null;
     }
   }
 
@@ -544,11 +415,11 @@
           return;
         }
       }
-      const action = parseAction(trimmed);
+      const action = window.ZenoCommands.parseAction(trimmed);
       if (action) {
         return runAction(logId, action);
       }
-      const imagePrompt = parseImagePrompt(trimmed);
+      const imagePrompt = window.ZenoCommands.parseImagePrompt(trimmed);
       if (imagePrompt) {
         return generateImage(logId, imagePrompt);
       }
@@ -577,7 +448,7 @@
       return;
     }
 
-    const jsonAction = extractJsonAction(result.text);
+    const jsonAction = window.ZenoCommands.extractJsonAction(result.text);
     if (jsonAction && jsonAction.input) {
       if (/image|picture|draw|art|photo/.test(jsonAction.action)) {
         return generateImage(logId, jsonAction.input);
