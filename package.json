@@ -14,6 +14,7 @@
       "main.js",
       "preload.js",
       "index.html",
+      "lib/**",
       "css/**",
       "js/**",
       "plugins/**",
