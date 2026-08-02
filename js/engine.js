@@ -194,7 +194,7 @@
     '{"intent":"image","prompt":"<what to draw>"}',
     '{"intent":"agent","task":"<the full task, for multi-step jobs like creating files, coding, installing, running commands>"}',
     '{"intent":"chat"}',
-    "Rules: only pick an action if the user is clearly telling the computer to do something. Questions, conversation and anything unclear are chat. Commands like pause the music, skip this song, turn it up, open spotify, close chrome, put the pc to sleep, are actions. minutes/level/key/target/page fields only when relevant."
+    "Rules: any request to open, close, launch, play, pause, skip, mute, search, control volume or brightness, lock, sleep, shutdown, screenshot, type, or manage apps and windows is an action, however casually it is phrased. turn it up = volume-up, kill spotify = kill target spotify, shut it down = shutdown. Multi-step jobs that create or edit files, write code, install things or run commands are agent. Pure questions, opinions and conversation are chat. When genuinely torn between chat and an action, pick the action. minutes/level/key/target/page fields only when relevant."
   ].join("\n");
 
   async function interpret(config, text) {
