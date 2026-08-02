@@ -60,7 +60,7 @@
   function hide() {
     window.ZenoVoice.stopSpeaking();
     if (listening) {
-      window.zeno.cancelListen();
+      window.ZenoVoice.cancelListening();
       listening = false;
     }
     island.classList.add("leaving");
@@ -167,7 +167,7 @@
   async function startListening() {
     if (busy) return;
     if (listening) {
-      window.zeno.cancelListen();
+      window.ZenoVoice.cancelListening();
       listening = false;
       setState("idle", "what can I do for you?");
       return;
@@ -175,14 +175,31 @@
     window.ZenoVoice.stopSpeaking();
     listening = true;
     setState("listening", "listening...");
-    const result = await window.zeno.listen();
-    listening = false;
-    if (result.ok) {
-      input.value = "";
-      handle(result.text);
-    } else {
-      setState("idle", result.error);
-    }
+    window.ZenoVoice.startListening(
+      (text, isFinal, status) => {
+        if (isFinal) {
+          listening = false;
+          input.value = "";
+          handle(text);
+        } else if (status) {
+          lineEl.textContent = status;
+        } else if (text) {
+          lineEl.textContent = text;
+        }
+      },
+      (error) => {
+        listening = false;
+        setState("idle", error || "what can I do for you?");
+      },
+      (level) => {
+        const bars = document.querySelectorAll("#island-wave i");
+        const boost = Math.min(1, level * 26);
+        bars.forEach((bar, i) => {
+          bar.style.animation = "none";
+          bar.style.transform = `scaleY(${0.3 + boost * (0.5 + Math.sin(Date.now() / 90 + i) * 0.5)})`;
+        });
+      }
+    );
   }
 
   window.zeno.onListenPartial((text) => {
@@ -215,7 +232,7 @@
     const value = input.value;
     input.value = "";
     if (listening) {
-      window.zeno.cancelListen();
+      window.ZenoVoice.cancelListening();
       listening = false;
     }
     handle(value);

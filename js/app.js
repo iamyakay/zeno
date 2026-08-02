@@ -738,18 +738,23 @@
     window.ZenoGlobe.setMood("listening");
     micBtn.classList.add("live");
     const started = await window.ZenoVoice.startListening(
-      (text, isFinal) => {
+      (text, isFinal, status) => {
         if (isFinal) {
           micBtn.classList.remove("live");
           window.ZenoGlobe.setMood("idle");
           targetInput.value = "";
+          targetInput.placeholder = "ask ZENO anything...";
           submit(logId, text, consensusToggle.checked);
+        } else if (status) {
+          targetInput.value = "";
+          targetInput.placeholder = status;
         } else {
           targetInput.value = text;
         }
       },
       (error) => {
         micBtn.classList.remove("live");
+        targetInput.placeholder = "ask ZENO anything...";
         if (!busy) window.ZenoGlobe.setMood("idle");
         if (error) addMessage(logId, "zeno", error);
       }
@@ -1045,7 +1050,7 @@
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       window.ZenoVoice.stopSpeaking();
-      window.ZenoVoice.stopListening();
+      window.ZenoVoice.cancelListening();
       closeSidebar();
     }
   });

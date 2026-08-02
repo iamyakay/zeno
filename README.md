@@ -99,6 +99,8 @@ Settings and data are plain json files in your user folder. Nothing leaves your 
 
 ## Changelog
 
+**2.2.0** — ZENO finally hears you properly. Speech recognition is now OpenAI's Whisper AI running locally on your PC, replacing the ancient Windows recognizer entirely. It records through your mic with noise suppression, detects when you stop talking, and transcribes with an actual AI model, offline and free. First launch downloads the engine and model (about 150 MB, one time, automatic). The old recognizer stays as a fallback if setup fails.
+
 **2.1.0** — real AI voice and understands everything. ZENO now speaks with Microsoft's neural AI voice (Aria) for free, no key needed, and falls back to the local voice offline. New AI intent router: commands that aren't in the built-in list still work, "open valorant", "pause the music", "skip this song", "close chrome", "put the pc to sleep" all get understood and executed, and ZENO can now launch any app installed on your PC by name.
 
 **2.0.1** — voice recognition tuned: shorter listening window, faster end-of-speech detection, forced en-US recognizer, clear no-microphone error. The assistant now waits for the greeting to finish before listening so it doesn't hear itself. Removed the shadow around the assistant island. ZENO now lives in the system tray: closing the window keeps it running in the background with Ctrl+Y still active, quit from the tray menu. Proper app icon.

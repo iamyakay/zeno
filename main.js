@@ -13,6 +13,7 @@ const plugins = require("./lib/plugins");
 const updates = require("./lib/updates");
 const agent = require("./lib/agent");
 const tts = require("./lib/tts");
+const whisper = require("./lib/whisper");
 
 let win = null;
 let overlay = null;
@@ -130,6 +131,7 @@ app.whenReady().then(() => {
   createTray();
   globalShortcut.register("Control+Y", toggleOverlay);
   system.setWakeEnabled(config.load().wakeWord);
+  setTimeout(() => { whisper.setup().catch(() => {}); }, 3000);
   app.on("activate", () => {
     showMain();
   });
@@ -183,3 +185,4 @@ plugins.register(ipcMain);
 updates.register(ipcMain);
 agent.register(ipcMain);
 tts.register(ipcMain);
+whisper.register(ipcMain, () => win);
