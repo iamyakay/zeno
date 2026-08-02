@@ -1028,7 +1028,11 @@ button { font-family: var(--mono); cursor: pointer; }
   box-shadow: 0 0 24px var(--accent-dim);
 }
 
-#cfg-saved, #cfg-test-result, #cfg-models-count { font-size: 11px; color: var(--accent); }
+#cfg-saved, #cfg-test-result, #cfg-models-count, #cfg-mic-result { font-size: 11px; color: var(--accent); }
+
+.mic-meter { width: 100%; height: 6px; }
+
+.mic-meter > div { transition: width 80ms linear; }
 
 #view-credits { align-items: center; justify-content: center; overflow-y: auto; }
 

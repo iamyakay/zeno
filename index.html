@@ -142,6 +142,16 @@
           <textarea id="cfg-squad" rows="4" placeholder="one model id per line"></textarea>
         </div>
         <div class="config-card">
+          <h3>MICROPHONE</h3>
+          <label>Input device
+            <select id="cfg-mic"></select>
+          </label>
+          <p class="hint">pick your real mic, avoid stereo mix, webcam mics, virtual cables and bluetooth hands-free inputs. use the test to check ZENO can hear you.</p>
+          <button id="cfg-mic-test" class="ghost-btn">test mic</button>
+          <div class="hud-bar mic-meter"><div id="cfg-mic-level"></div></div>
+          <span id="cfg-mic-result"></span>
+        </div>
+        <div class="config-card">
           <h3>APPEARANCE + VOICE</h3>
           <label>Theme
             <select id="cfg-theme">
