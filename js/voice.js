@@ -71,17 +71,27 @@
 
   async function whisperListen(onResult, onEnd, onLevel) {
     let stream;
+    const cfg = await window.zeno.getConfig();
+    const audio = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      channelCount: 1
+    };
+    if (cfg.micDevice) audio.deviceId = { exact: cfg.micDevice };
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1
-        }
-      });
+      stream = await navigator.mediaDevices.getUserMedia({ audio });
     } catch {
-      return null;
+      if (cfg.micDevice) {
+        try {
+          delete audio.deviceId;
+          stream = await navigator.mediaDevices.getUserMedia({ audio });
+        } catch {
+          return null;
+        }
+      } else {
+        return null;
+      }
     }
     const context = new AudioContext();
     const source = context.createMediaStreamSource(stream);
@@ -123,7 +133,13 @@
       const wav = encodeWav(padded, 16000);
       const result = await window.zeno.whisperTranscribe(wav);
       if (result.ok && result.text) {
-        const normalized = result.text.replace(/\b(?:zano|zeeno|xeno|zenno|seno)\b/gi, "zeno");
+        let normalized = result.text
+          .replace(/\b(?:zano|zeeno|xeno|zenno|seno|zena|zino|sino)\b/gi, "zeno")
+          .replace(/\b(?:haze|hey's|hey is|his) ?no\b/gi, "hey zeno")
+          .replace(/^\s*(?:hey|hi|yo|ok|okay)[,.!\s]+zeno[,.!\s]+/i, "")
+          .replace(/^\s*zeno[,.!\s]+/i, "")
+          .trim();
+        if (!normalized) normalized = result.text.trim();
         onResult(normalized, true);
       } else {
         onEnd(result.ok ? "I heard you but couldn't make out any words, try again closer to the mic" : `speech engine error: ${result.error}`);
@@ -147,8 +163,8 @@
         voicedFrames = 0;
         silentFrames += 1;
         const silentMs = silentFrames * frameMs;
-        if (spokeYet && silentMs > 900) settle(false);
-        else if (!spokeYet && silentMs > 7000) settle(false);
+        if (spokeYet && silentMs > 650) settle(false);
+        else if (!spokeYet && silentMs > 6000) settle(false);
       }
     };
 
