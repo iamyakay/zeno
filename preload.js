@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("zeno", {
   appVersion: () => ipcRenderer.invoke("app:version"),
   listen: () => ipcRenderer.invoke("os:listen"),
   cancelListen: () => ipcRenderer.invoke("os:listen-cancel"),
+  ttsToken: () => ipcRenderer.invoke("tts:token"),
   onListenPartial: (callback) => ipcRenderer.on("zeno:listen-partial", (_event, text) => callback(text)),
   agentRun: (task) => ipcRenderer.invoke("agent:run", task),
   agentCancel: () => ipcRenderer.invoke("agent:cancel"),

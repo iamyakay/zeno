@@ -549,6 +549,16 @@
         addMessage(logId, "zeno", "tell me what to draw, like: generate an image of a neon city at night");
         return;
       }
+      if (trimmed.length <= 90 && !/\?\s*$/.test(trimmed) && config.apiKey) {
+        setBusy(true);
+        const routed = await window.ZenoEngine.interpret(config, cleaned);
+        setBusy(false);
+        if (routed) {
+          if (routed.kind === "action") return runAction(logId, routed.action);
+          if (routed.kind === "image") return generateImage(logId, routed.prompt);
+          if (routed.kind === "agent") return runAgentTask(logId, routed.task);
+        }
+      }
     }
 
     let prompt = trimmed;

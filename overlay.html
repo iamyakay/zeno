@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' wss://speech.platform.bing.com">
   <title>ZENO Assistant</title>
   <link rel="stylesheet" href="css/overlay.css">
 </head>
@@ -27,6 +27,8 @@
     </form>
   </div>
   <script src="js/commands.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/voice.js"></script>
   <script src="js/overlay.js"></script>
 </body>
 </html>

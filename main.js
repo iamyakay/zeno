@@ -12,6 +12,7 @@ const system = require("./lib/system");
 const plugins = require("./lib/plugins");
 const updates = require("./lib/updates");
 const agent = require("./lib/agent");
+const tts = require("./lib/tts");
 
 let win = null;
 let overlay = null;
@@ -122,6 +123,7 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(permission === "media" || permission === "audioCapture");
   });
+  tts.setupHeaders(session.defaultSession);
   plugins.load();
   createWindow();
   createOverlay();
@@ -180,3 +182,4 @@ system.register(ipcMain, () => win);
 plugins.register(ipcMain);
 updates.register(ipcMain);
 agent.register(ipcMain);
+tts.register(ipcMain);

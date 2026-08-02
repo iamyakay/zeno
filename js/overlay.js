@@ -10,40 +10,8 @@
   let listening = false;
   const history = [];
 
-  function pickVoice() {
-    const voices = window.speechSynthesis.getVoices();
-    return voices.find((v) => /en/i.test(v.lang) && /zira|aria|jenny|eva|female|susan|hazel|libby|sonia|ana/i.test(v.name)) ||
-      voices.find((v) => /en/i.test(v.lang)) || null;
-  }
-
   function speak(text) {
-    return new Promise((resolve) => {
-      if (!window.speechSynthesis) {
-        resolve();
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const clean = String(text)
-        .replace(/```[\s\S]*?```/g, " code omitted. ")
-        .replace(/[*_#`>|]/g, "")
-        .slice(0, 600);
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.rate = 1.04;
-      utterance.pitch = 1.25;
-      const voice = pickVoice();
-      if (voice) utterance.voice = voice;
-      let done = false;
-      const finish = () => {
-        if (!done) {
-          done = true;
-          resolve();
-        }
-      };
-      utterance.onend = finish;
-      utterance.onerror = finish;
-      setTimeout(finish, 8000);
-      window.speechSynthesis.speak(utterance);
-    });
+    return window.ZenoVoice.speak(text);
   }
 
   function setState(mode, line) {
@@ -90,7 +58,7 @@
   }
 
   function hide() {
-    window.speechSynthesis.cancel();
+    window.ZenoVoice.stopSpeaking();
     if (listening) {
       window.zeno.cancelListen();
       listening = false;
@@ -134,6 +102,32 @@
         return;
       }
       if (!config) config = await window.zeno.getConfig();
+      if (config.apiKey && trimmed.length <= 90 && !/\?\s*$/.test(trimmed)) {
+        const routed = await window.ZenoEngine.interpret(config, trimmed);
+        if (routed) {
+          if (routed.kind === "action") {
+            const result = await window.zeno.runAction(routed.action);
+            const line = result.ok ? (result.detail || "done") : `couldn't do that: ${result.error}`;
+            setState("idle", line);
+            speak(result.ok ? `done, ${line}` : "sorry, that didn't work");
+            return;
+          }
+          if (routed.kind === "agent") {
+            setState("thinking", "on it, working on your task...");
+            const result = await window.zeno.agentRun(routed.task);
+            if (result.ok) {
+              setState("idle", "task complete");
+              showReplyWithSteps(result.answer);
+              speak("all done");
+            } else {
+              setState("idle", "task failed");
+              showReplyWithSteps(result.error);
+              speak("I hit a problem with that task");
+            }
+            return;
+          }
+        }
+      }
       if (!config.apiKey) {
         setState("idle", "I need an API key first, open ZENO and set one in CONFIG");
         speak("I need an API key first. open the main window and set one in config.");
@@ -178,7 +172,7 @@
       setState("idle", "what can I do for you?");
       return;
     }
-    window.speechSynthesis.cancel();
+    window.ZenoVoice.stopSpeaking();
     listening = true;
     setState("listening", "listening...");
     const result = await window.zeno.listen();
@@ -235,6 +229,5 @@
     if (event.key === "Escape") hide();
   });
 
-  window.speechSynthesis.getVoices();
   syncHeight();
 })();

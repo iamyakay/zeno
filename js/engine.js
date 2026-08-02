@@ -177,6 +177,65 @@
     };
   }
 
+  const INTENT_PROMPT = [
+    "You route commands for ZENO, a Windows PC assistant. Given the user's words, decide if this is a direct action on the computer or a normal chat message.",
+    "Reply with EXACTLY ONE JSON object, nothing else.",
+    'Action formats:',
+    '{"intent":"app","name":"<app name to launch, e.g. valorant, word, obs>"}',
+    '{"intent":"url","url":"https://..."}',
+    '{"intent":"search","query":"..."}',
+    '{"intent":"system","name":"volume-up|volume-down|mute|lock|screenshot|recycle|shutdown|cancel-shutdown|restart|sleep|battery|processes","minutes":10}',
+    '{"intent":"system","name":"brightness","level":70}',
+    '{"intent":"system","name":"media","key":"play-pause|next|previous|stop"}',
+    '{"intent":"system","name":"kill","target":"<process name>"}',
+    '{"intent":"system","name":"settings-page","page":"bluetooth|wifi|network|display|sound|battery|apps|updates"}',
+    '{"intent":"system","name":"type","text":"<text to type>"}',
+    '{"intent":"folder","name":"downloads|documents|pictures|music|videos|desktop|home"}',
+    '{"intent":"image","prompt":"<what to draw>"}',
+    '{"intent":"agent","task":"<the full task, for multi-step jobs like creating files, coding, installing, running commands>"}',
+    '{"intent":"chat"}',
+    "Rules: only pick an action if the user is clearly telling the computer to do something. Questions, conversation and anything unclear are chat. Commands like pause the music, skip this song, turn it up, open spotify, close chrome, put the pc to sleep, are actions. minutes/level/key/target/page fields only when relevant."
+  ].join("\n");
+
+  async function interpret(config, text) {
+    if (!config.apiKey) return null;
+    const result = await window.zeno.chat({
+      model: config.primaryModel,
+      messages: [
+        { role: "system", content: INTENT_PROMPT },
+        { role: "user", content: String(text).slice(0, 400) }
+      ],
+      maxTokens: 150
+    });
+    if (!result.ok) return null;
+    const match = result.text.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    let parsed;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch {
+      return null;
+    }
+    const intent = String(parsed.intent || "").toLowerCase();
+    if (intent === "app" && parsed.name) return { kind: "action", action: { type: "anyapp", name: String(parsed.name) } };
+    if (intent === "url" && /^https?:\/\//.test(String(parsed.url || ""))) return { kind: "action", action: { type: "url", url: String(parsed.url) } };
+    if (intent === "search" && parsed.query) return { kind: "action", action: { type: "search", query: String(parsed.query) } };
+    if (intent === "system" && parsed.name) {
+      const action = { type: "system", name: String(parsed.name) };
+      if (parsed.minutes != null) action.minutes = Number(parsed.minutes);
+      if (parsed.level != null) action.level = Number(parsed.level);
+      if (parsed.key) action.key = String(parsed.key);
+      if (parsed.target) action.target = String(parsed.target);
+      if (parsed.page) action.page = String(parsed.page);
+      if (parsed.text) action.text = String(parsed.text);
+      return { kind: "action", action };
+    }
+    if (intent === "folder" && parsed.name) return { kind: "action", action: { type: "folder", name: String(parsed.name) } };
+    if (intent === "image" && parsed.prompt) return { kind: "image", prompt: String(parsed.prompt) };
+    if (intent === "agent" && parsed.task) return { kind: "agent", task: String(parsed.task) };
+    return null;
+  }
+
   function clearHistory() {
     history.length = 0;
   }
@@ -192,5 +251,5 @@
     }
   }
 
-  window.ZenoEngine = { askSingle, askConsensus, clearHistory, getHistory, setHistory };
+  window.ZenoEngine = { askSingle, askConsensus, interpret, clearHistory, getHistory, setHistory };
 })();

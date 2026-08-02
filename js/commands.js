@@ -30,7 +30,7 @@
       if (SITE_NAMES.has(word)) return { type: "site", name: word };
       const folder = word.replace(/\s+folder$/, "");
       if (FOLDER_NAMES.includes(folder)) return { type: "folder", name: folder };
-      return null;
+      return { type: "anyapp", name: word };
     }
     m = t.match(/^(?:search|google)\s+(?:for\s+)?(.+)$/);
     if (m) return { type: "search", query: m[1] };
