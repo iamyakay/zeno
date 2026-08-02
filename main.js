@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, session, globalShortcut, screen } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, session, globalShortcut, screen, Tray, Menu, nativeImage } = require("electron");
 const path = require("node:path");
 
 if (!app.requestSingleInstanceLock()) {
@@ -15,6 +15,8 @@ const agent = require("./lib/agent");
 
 let win = null;
 let overlay = null;
+let tray = null;
+let quitting = false;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -33,6 +35,35 @@ function createWindow() {
     }
   });
   win.loadFile("index.html");
+  win.on("close", (event) => {
+    if (!quitting) {
+      event.preventDefault();
+      win.hide();
+    }
+  });
+}
+
+function showMain() {
+  if (!win || win.isDestroyed()) {
+    createWindow();
+    return;
+  }
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+}
+
+function createTray() {
+  const image = nativeImage.createFromPath(path.join(__dirname, "assets", "zeno.png")).resize({ width: 16, height: 16 });
+  tray = new Tray(image);
+  tray.setToolTip("ZENO · ctrl+y for the assistant");
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: "Open ZENO", click: showMain },
+    { label: "Assistant (Ctrl+Y)", click: toggleOverlay },
+    { type: "separator" },
+    { label: "Quit ZENO", click: () => { quitting = true; app.quit(); } }
+  ]));
+  tray.on("click", showMain);
 }
 
 function createOverlay() {
@@ -84,10 +115,7 @@ function toggleOverlay() {
 }
 
 app.on("second-instance", () => {
-  if (win && !win.isDestroyed()) {
-    if (win.isMinimized()) win.restore();
-    win.focus();
-  }
+  showMain();
 });
 
 app.whenReady().then(() => {
@@ -97,14 +125,16 @@ app.whenReady().then(() => {
   plugins.load();
   createWindow();
   createOverlay();
+  createTray();
   globalShortcut.register("Control+Y", toggleOverlay);
   system.setWakeEnabled(config.load().wakeWord);
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    showMain();
   });
 });
 
 app.on("before-quit", () => {
+  quitting = true;
   system.shutdown();
 });
 
@@ -112,9 +142,7 @@ app.on("will-quit", () => {
   globalShortcut.unregisterAll();
 });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
+app.on("window-all-closed", () => {});
 
 ipcMain.handle("open:external", (_event, url) => {
   if (/^https?:\/\//i.test(String(url))) {
@@ -137,13 +165,7 @@ ipcMain.handle("overlay:resize", (_event, height) => {
 
 ipcMain.handle("overlay:open-main", () => {
   if (overlay && !overlay.isDestroyed()) overlay.hide();
-  if (win && !win.isDestroyed()) {
-    if (win.isMinimized()) win.restore();
-    win.show();
-    win.focus();
-  } else {
-    createWindow();
-  }
+  showMain();
   return true;
 });
 

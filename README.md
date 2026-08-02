@@ -99,6 +99,8 @@ Settings and data are plain json files in your user folder. Nothing leaves your 
 
 ## Changelog
 
+**2.0.1** — voice recognition tuned: shorter listening window, faster end-of-speech detection, forced en-US recognizer, clear no-microphone error. The assistant now waits for the greeting to finish before listening so it doesn't hear itself. Removed the shadow around the assistant island. ZENO now lives in the system tray: closing the window keeps it running in the background with Ctrl+Y still active, quit from the tray menu. Proper app icon.
+
 **2.0.0** — the ultimate update. Ctrl+Y assistant island, agent mode that creates files and runs commands, rebuilt voice recognition with live transcription, female voice, deep thinking mode, per-reply token counts with session totals, copy buttons on every reply, infrastructure page, [teamzap.uk](https://teamzap.uk/).
 
 **1.2.0** — streaming replies, chat history browser, plugins, update banner.

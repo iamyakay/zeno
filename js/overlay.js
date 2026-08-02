@@ -17,18 +17,33 @@
   }
 
   function speak(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const clean = String(text)
-      .replace(/```[\s\S]*?```/g, " code omitted. ")
-      .replace(/[*_#`>|]/g, "")
-      .slice(0, 600);
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.rate = 1.04;
-    utterance.pitch = 1.25;
-    const voice = pickVoice();
-    if (voice) utterance.voice = voice;
-    window.speechSynthesis.speak(utterance);
+    return new Promise((resolve) => {
+      if (!window.speechSynthesis) {
+        resolve();
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const clean = String(text)
+        .replace(/```[\s\S]*?```/g, " code omitted. ")
+        .replace(/[*_#`>|]/g, "")
+        .slice(0, 600);
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.rate = 1.04;
+      utterance.pitch = 1.25;
+      const voice = pickVoice();
+      if (voice) utterance.voice = voice;
+      let done = false;
+      const finish = () => {
+        if (!done) {
+          done = true;
+          resolve();
+        }
+      };
+      utterance.onend = finish;
+      utterance.onerror = finish;
+      setTimeout(finish, 8000);
+      window.speechSynthesis.speak(utterance);
+    });
   }
 
   function setState(mode, line) {
@@ -192,10 +207,9 @@
     const greetings = ["what can I do for you?", "yes? I'm listening", "hey, need something?", "at your service"];
     const line = greetings[Math.floor(Math.random() * greetings.length)];
     setState("idle", line);
-    speak(line);
-    setTimeout(() => {
-      if (!busy && !listening) startListening();
-    }, 1400);
+    await speak(line);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    if (!busy && !listening) startListening();
   });
 
   window.zeno.onOverlaySoftHide(() => {
