@@ -549,7 +549,7 @@
         addMessage(logId, "zeno", "tell me what to draw, like: generate an image of a neon city at night");
         return;
       }
-      if (trimmed.length <= 90 && !/\?\s*$/.test(trimmed) && config.apiKey) {
+      if (trimmed.length <= 200 && config.apiKey) {
         setBusy(true);
         const routed = await window.ZenoEngine.interpret(config, cleaned);
         setBusy(false);
@@ -808,6 +808,82 @@
     btn.addEventListener("click", () => switchView(btn.dataset.view));
   }
 
+  async function fillMicList() {
+    const select = $("cfg-mic");
+    select.innerHTML = "";
+    const auto = document.createElement("option");
+    auto.value = "";
+    auto.textContent = "windows default";
+    select.appendChild(auto);
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      for (const device of devices) {
+        if (device.kind !== "audioinput" || !device.deviceId || device.deviceId === "default") continue;
+        const option = document.createElement("option");
+        option.value = device.deviceId;
+        option.textContent = device.label || `microphone ${select.children.length}`;
+        select.appendChild(option);
+      }
+    } catch {}
+    select.value = config.micDevice || "";
+    if (select.value !== (config.micDevice || "")) select.value = "";
+  }
+
+  let micTestStop = null;
+
+  $("cfg-mic-test").addEventListener("click", async () => {
+    if (micTestStop) {
+      micTestStop();
+      return;
+    }
+    const resultEl = $("cfg-mic-result");
+    const levelEl = $("cfg-mic-level");
+    resultEl.textContent = "listening... say something";
+    $("cfg-mic-test").textContent = "stop test";
+    const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
+    const chosen = $("cfg-mic").value;
+    if (chosen) audio.deviceId = { exact: chosen };
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio });
+    } catch (error) {
+      resultEl.textContent = `mic failed: ${String(error?.message || error)}`;
+      $("cfg-mic-test").textContent = "test mic";
+      return;
+    }
+    fillMicList();
+    const context = new AudioContext();
+    const source = context.createMediaStreamSource(stream);
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    const data = new Uint8Array(analyser.fftSize);
+    let peak = 0;
+    const meter = setInterval(() => {
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (const v of data) {
+        const centered = (v - 128) / 128;
+        sum += centered * centered;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      peak = Math.max(peak, rms);
+      levelEl.style.width = `${Math.min(100, Math.round(rms * 400))}%`;
+      if (peak > 0.04) resultEl.textContent = "hearing you loud and clear";
+      else if (peak > 0.012) resultEl.textContent = "hearing something, but quiet. get closer or raise mic volume in Windows";
+    }, 90);
+    micTestStop = () => {
+      clearInterval(meter);
+      for (const track of stream.getTracks()) track.stop();
+      context.close().catch(() => {});
+      levelEl.style.width = "0%";
+      if (peak <= 0.012) resultEl.textContent = "heard nothing. wrong device selected or mic muted in Windows";
+      $("cfg-mic-test").textContent = "test mic";
+      micTestStop = null;
+    };
+    setTimeout(() => { if (micTestStop) micTestStop(); }, 12000);
+  });
+
   function fillConfigForm() {
     $("cfg-key").value = config.apiKey || "";
     $("cfg-base").value = config.baseUrl || "";
@@ -821,6 +897,7 @@
     $("cfg-consensus").checked = Boolean(config.consensusEnabled);
     $("cfg-wake").checked = Boolean(config.wakeWord);
     $("cfg-persona").value = config.persona || "";
+    fillMicList();
   }
 
   $("cfg-save").addEventListener("click", async () => {
@@ -836,7 +913,8 @@
       voiceReplies: $("cfg-voice").checked,
       consensusEnabled: $("cfg-consensus").checked,
       wakeWord: $("cfg-wake").checked,
-      persona: $("cfg-persona").value.trim()
+      persona: $("cfg-persona").value.trim(),
+      micDevice: $("cfg-mic").value
     });
     config.memory = await window.zeno.memList();
     document.body.dataset.theme = config.theme;

@@ -102,7 +102,7 @@
         return;
       }
       if (!config) config = await window.zeno.getConfig();
-      if (config.apiKey && trimmed.length <= 90 && !/\?\s*$/.test(trimmed)) {
+      if (config.apiKey && trimmed.length <= 200) {
         const routed = await window.ZenoEngine.interpret(config, trimmed);
         if (routed) {
           if (routed.kind === "action") {
