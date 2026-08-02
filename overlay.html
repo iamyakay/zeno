@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:">
+  <title>ZENO Assistant</title>
+  <link rel="stylesheet" href="css/overlay.css">
+</head>
+<body>
+  <div id="island">
+    <div id="island-top">
+      <div id="island-orb"><span></span></div>
+      <div id="island-text">
+        <div id="island-state">ZENO</div>
+        <div id="island-line">what can I do for you?</div>
+      </div>
+      <div id="island-wave">
+        <i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <button type="button" id="island-expand" title="open ZENO">◱</button>
+      <button type="button" id="island-close" title="hide (ctrl+y)">✕</button>
+    </div>
+    <div id="island-reply"></div>
+    <form id="island-form">
+      <input id="island-input" type="text" placeholder="type or just speak..." autocomplete="off">
+      <button type="button" id="island-mic">MIC</button>
+    </form>
+  </div>
+  <script src="js/commands.js"></script>
+  <script src="js/overlay.js"></script>
+</body>
+</html>

@@ -25,6 +25,21 @@
 
   let pluginList = [];
   let docContext = null;
+  let sessionTokens = 0;
+
+  function trackTokens(usage) {
+    if (!usage) return;
+    sessionTokens += Number(usage.total_tokens || 0);
+    const el = $("chat-tokens");
+    if (el) el.textContent = sessionTokens > 0 ? `session: ${sessionTokens.toLocaleString()} tokens` : "";
+  }
+
+  function usageMeta(result) {
+    if (!result?.usage) return null;
+    const u = result.usage;
+    const parts = [`${Number(u.prompt_tokens || 0).toLocaleString()} in`, `${Number(u.completion_tokens || 0).toLocaleString()} out`, `${Number(u.total_tokens || 0).toLocaleString()} total tokens`];
+    return `${parts.join(" · ")}${result.deepThink ? " · deep think" : ""}`;
+  }
 
   function activeLog() {
     return document.querySelector("#view-chat.active") ? "chat-log" : "core-transcript";
@@ -112,7 +127,7 @@
     }
     const hour = new Date().getHours();
     const part = hour < 5 ? "up late" : hour < 12 ? "good morning" : hour < 18 ? "good afternoon" : "good evening";
-    addMessage("core-transcript", "zeno", `${part}, ${config.userName || "operator"}. systems online. talk to me, or try: "open youtube", "search best mechanical keyboards", "generate an image of a cyberpunk city".`);
+    addMessage("core-transcript", "zeno", `${part}, ${config.userName || "operator"}. systems online. press ctrl+y anywhere for the quick assistant. try: "open youtube", "make me a snake game in python" with agent mode on, or "generate an image of a cyberpunk city".`);
   }
 
   function setBusy(next) {
@@ -141,6 +156,19 @@
     }, 14);
   }
 
+  function attachCopy(wrap, text) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "msg-copy";
+    btn.textContent = "copy";
+    btn.addEventListener("click", async () => {
+      await window.zeno.clipboardWrite(text);
+      btn.textContent = "copied";
+      setTimeout(() => { btn.textContent = "copy"; }, 1400);
+    });
+    wrap.appendChild(btn);
+  }
+
   function addMessage(logId, who, text, imageUrl, meta) {
     const log = $(logId);
     const wrap = document.createElement("div");
@@ -159,6 +187,7 @@
       body.textContent = text;
     }
     wrap.append(label, body);
+    if (who === "zeno") attachCopy(wrap, text);
     if (imageUrl) {
       const img = document.createElement("img");
       img.src = imageUrl;
@@ -196,6 +225,7 @@
       body.textContent = entry.text;
     }
     wrap.append(label, body);
+    if (entry.who === "zeno") attachCopy(wrap, entry.text);
     if (entry.meta) {
       const metaEl = document.createElement("div");
       metaEl.className = "meta";
@@ -346,6 +376,44 @@
     }
   }
 
+  let agentStepsEl = null;
+
+  window.zeno.onAgentStep((payload) => {
+    if (!agentStepsEl || !agentStepsEl.isConnected) return;
+    const key = `agent-step-${payload.step}`;
+    let row = document.getElementById(key);
+    if (!row) {
+      row = document.createElement("div");
+      row.id = key;
+      row.className = "agent-step";
+      agentStepsEl.appendChild(row);
+    }
+    row.textContent = `${payload.step}. ${payload.note}`;
+    row.className = `agent-step ${payload.state}`;
+    const log = agentStepsEl.closest("#chat-log, #core-transcript");
+    if (log) log.scrollTop = log.scrollHeight;
+  });
+
+  async function runAgentTask(logId, task) {
+    setBusy(true);
+    const log = $(logId);
+    agentStepsEl = document.createElement("div");
+    agentStepsEl.className = "agent-steps";
+    log.appendChild(agentStepsEl);
+    log.scrollTop = log.scrollHeight;
+    const result = await window.zeno.agentRun(task);
+    setBusy(false);
+    if (agentStepsEl.children.length === 0) agentStepsEl.remove();
+    agentStepsEl = null;
+    const tokenNote = result.tokens ? ` · ${Number(result.tokens).toLocaleString()} tokens` : "";
+    if (result.ok) {
+      addMessage(logId, "zeno", result.answer, null, `agent mode · ${result.steps?.length || 0} steps${tokenNote}`);
+      if ($("core-voice").checked) window.ZenoVoice.speak(result.answer);
+    } else {
+      addMessage(logId, "zeno", `agent failed: ${result.error}`, null, `agent mode${tokenNote}`);
+    }
+  }
+
   async function submit(logId, text, useConsensus) {
     if (busy) return;
     const trimmed = text.trim();
@@ -353,6 +421,11 @@
 
     if (logId === "core-transcript") openDock();
     addMessage(logId, "user", trimmed || "[image]", pendingImage);
+
+    const agentOn = logId === "chat-log" ? $("chat-agent").checked : $("core-agent").checked;
+    if (agentOn && trimmed && !pendingImage) {
+      return runAgentTask(logId, trimmed);
+    }
 
     if (!pendingImage && trimmed) {
       const lowered = trimmed.toLowerCase().replace(/^zeno[,.!\s]+/, "").replace(/[.!?]+$/, "");
@@ -511,11 +584,13 @@
     };
 
     let result;
+    const deepThink = logId === "chat-log" ? $("chat-deep").checked : $("core-deep").checked;
     if (useConsensus) {
       result = await window.ZenoEngine.askConsensus(config, prompt, image, renderAgents);
     } else {
-      result = await window.ZenoEngine.askSingle(config, prompt, image, onDelta);
+      result = await window.ZenoEngine.askSingle(config, prompt, image, onDelta, { deepThink });
     }
+    trackTokens(result.usage);
 
     if (thinkingRow.isConnected) thinkingRow.remove();
     setBusy(false);
@@ -531,10 +606,12 @@
         }
         const metaEl = document.createElement("div");
         metaEl.className = "meta";
-        metaEl.textContent = result.model;
+        const usageNote = usageMeta(result);
+        metaEl.textContent = usageNote ? `${result.model} · ${usageNote}` : result.model;
         live.wrap.appendChild(metaEl);
+        attachCopy(live.wrap, result.text);
         log.scrollTop = log.scrollHeight;
-        recordMessage("zeno", result.text, result.model);
+        recordMessage("zeno", result.text, metaEl.textContent);
         if ($("core-voice").checked) window.ZenoVoice.speak(result.text);
         return;
       }
@@ -565,6 +642,8 @@
     if (result.consensus) {
       meta = `consensus of ${result.consensus.agreed}/${result.consensus.total}: ${result.consensus.sources.map((s) => s.split("/").pop().replace(/:free$/, "")).join(", ")}`;
     }
+    const usageNote = usageMeta(result);
+    if (usageNote) meta = `${meta} · ${usageNote}`;
     addMessage(logId, "zeno", result.text, null, meta);
 
     if ($("core-voice").checked) {
@@ -633,12 +712,19 @@
     newSession();
   });
 
+  let voiceTargetInput = null;
+
+  window.zeno.onListenPartial((text) => {
+    if (voiceTargetInput && window.ZenoVoice.listening) voiceTargetInput.value = text;
+  });
+
   async function startVoice(targetInput, micBtn, logId, consensusToggle) {
     window.ZenoVoice.stopSpeaking();
     if (window.ZenoVoice.listening) {
       window.ZenoVoice.stopListening();
       return;
     }
+    voiceTargetInput = targetInput;
     window.ZenoGlobe.setMood("listening");
     micBtn.classList.add("live");
     const started = await window.ZenoVoice.startListening(
@@ -920,6 +1006,11 @@
   }
 
   async function loadBalance() {
+    try {
+      const version = await window.zeno.appVersion();
+      const versionEl = $("credits-version");
+      if (versionEl) versionEl.textContent = `v${version}`;
+    } catch {}
     const result = await window.zeno.getCredits();
     if (result.ok && result.credits) {
       const used = Number(result.credits.total_usage || 0).toFixed(4);

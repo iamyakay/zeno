@@ -29,6 +29,13 @@
     }
   }
 
+  function pickVoice() {
+    const voices = window.speechSynthesis.getVoices();
+    return voices.find((v) => /en/i.test(v.lang) && /zira|aria|jenny|eva|susan|hazel|libby|sonia|ana|michelle|female/i.test(v.name)) ||
+      voices.find((v) => /en[-_](US|GB)/i.test(v.lang)) ||
+      voices.find((v) => /en/i.test(v.lang)) || null;
+  }
+
   function speak(text) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -37,11 +44,9 @@
       .replace(/[*_#`>|]/g, "")
       .slice(0, 1200);
     const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.rate = 1.05;
-    utterance.pitch = 0.9;
-    const voices = window.speechSynthesis.getVoices();
-    const pick = voices.find((v) => /en[-_](US|GB)/i.test(v.lang) && /male|david|mark|ryan/i.test(v.name)) ||
-      voices.find((v) => /en[-_](US|GB)/i.test(v.lang));
+    utterance.rate = 1.04;
+    utterance.pitch = 1.25;
+    const pick = pickVoice();
     if (pick) utterance.voice = pick;
     window.speechSynthesis.speak(utterance);
   }

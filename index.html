@@ -72,6 +72,8 @@
           </form>
           <div class="core-toggles">
             <label class="toggle"><input type="checkbox" id="core-consensus"> multi-AI consensus</label>
+            <label class="toggle"><input type="checkbox" id="core-deep"> deep thinking</label>
+            <label class="toggle"><input type="checkbox" id="core-agent"> agent mode</label>
             <label class="toggle"><input type="checkbox" id="core-voice" checked> voice replies</label>
             <button type="button" id="dock-expand" class="ghost-btn">expand</button>
             <span id="core-attach-name"></span>
@@ -91,6 +93,9 @@
       </form>
       <div class="core-toggles">
         <label class="toggle"><input type="checkbox" id="chat-consensus"> multi-AI consensus</label>
+        <label class="toggle"><input type="checkbox" id="chat-deep"> deep thinking</label>
+        <label class="toggle"><input type="checkbox" id="chat-agent"> agent mode</label>
+        <span id="chat-tokens" class="token-total"></span>
         <button type="button" id="chat-clear" class="ghost-btn">clear chat</button>
         <span id="chat-attach-name"></span>
       </div>
@@ -161,16 +166,36 @@
 
     <section id="view-credits" class="view">
       <h2>CREDITS</h2>
-      <div class="credits-card">
-        <div class="credits-logo"></div>
-        <h3>ZENO v1.1</h3>
-        <p>built by <strong>Zap</strong></p>
-        <div class="credits-links">
-          <button class="link-btn" data-url="https://github.com/iamyakay">GitHub / iamyakay</button>
-          <button class="link-btn" data-copy="Sethlowk">Discord / Sethlowk (click to copy)</button>
-          <button class="link-btn" data-url="https://openrouter.ai">OpenRouter</button>
+      <div class="credits-wrap">
+        <div class="credits-card">
+          <div class="credits-logo"></div>
+          <h3>ZENO <span id="credits-version">v2.0</span></h3>
+          <p>the ultimate personal AI system</p>
+          <p>built by <strong>Zap</strong> · Team ZAP</p>
+          <div class="credits-links">
+            <button class="link-btn" data-url="https://teamzap.uk/">Website / teamzap.uk</button>
+            <button class="link-btn" data-url="https://github.com/iamyakay">GitHub / iamyakay</button>
+            <button class="link-btn" data-copy="Sethlowk">Discord / Sethlowk (click to copy)</button>
+          </div>
+          <div id="credits-balance" class="hint"></div>
         </div>
-        <div id="credits-balance" class="hint"></div>
+        <div class="credits-card infra-card">
+          <h3>INFRASTRUCTURE</h3>
+          <div class="infra-grid">
+            <div class="infra-row"><span class="infra-k">SHELL</span><span>Electron · Chromium desktop runtime</span></div>
+            <div class="infra-row"><span class="infra-k">AI GATEWAY</span><span>OpenRouter · any OpenAI compatible API</span></div>
+            <div class="infra-row"><span class="infra-k">MODELS</span><span>your choice, free tier works out of the box</span></div>
+            <div class="infra-row"><span class="infra-k">CONSENSUS</span><span>parallel model squad + judge referee</span></div>
+            <div class="infra-row"><span class="infra-k">AGENT</span><span>tool-calling loop with PowerShell + file system</span></div>
+            <div class="infra-row"><span class="infra-k">VOICE IN</span><span>Windows speech recognition, live partials</span></div>
+            <div class="infra-row"><span class="infra-k">VOICE OUT</span><span>system speech synthesis, natural female voice</span></div>
+            <div class="infra-row"><span class="infra-k">IMAGES</span><span>Pollinations image generation</span></div>
+            <div class="infra-row"><span class="infra-k">WEATHER</span><span>Open-Meteo forecast + geocoding</span></div>
+            <div class="infra-row"><span class="infra-k">STORAGE</span><span>local json only, nothing leaves your PC</span></div>
+            <div class="infra-row"><span class="infra-k">UPDATES</span><span>GitHub releases, in-app banner</span></div>
+            <div class="infra-row"><span class="infra-k">LICENSE</span><span>MIT, open source</span></div>
+          </div>
+        </div>
       </div>
     </section>
   </main>

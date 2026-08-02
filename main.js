@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, session } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, session, globalShortcut, screen } = require("electron");
 const path = require("node:path");
 
 if (!app.requestSingleInstanceLock()) {
@@ -11,8 +11,10 @@ const ai = require("./lib/ai");
 const system = require("./lib/system");
 const plugins = require("./lib/plugins");
 const updates = require("./lib/updates");
+const agent = require("./lib/agent");
 
 let win = null;
+let overlay = null;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -33,6 +35,54 @@ function createWindow() {
   win.loadFile("index.html");
 }
 
+function createOverlay() {
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  overlay = new BrowserWindow({
+    width: 460,
+    height: 260,
+    x: Math.round((width - 460) / 2),
+    y: 8,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: false,
+    focusable: true,
+    hasShadow: false,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+  overlay.setAlwaysOnTop(true, "screen-saver");
+  overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  overlay.loadFile("overlay.html");
+  overlay.on("blur", () => {
+    if (overlay && !overlay.isDestroyed() && overlay.isVisible()) {
+      overlay.webContents.send("overlay:soft-hide");
+    }
+  });
+}
+
+function toggleOverlay() {
+  if (!overlay || overlay.isDestroyed()) createOverlay();
+  if (overlay.isVisible()) {
+    overlay.hide();
+  } else {
+    const { width } = screen.getPrimaryDisplay().workAreaSize;
+    overlay.setPosition(Math.round((width - 460) / 2), 8);
+    overlay.show();
+    overlay.focus();
+    overlay.webContents.send("overlay:activate");
+  }
+}
+
 app.on("second-instance", () => {
   if (win && !win.isDestroyed()) {
     if (win.isMinimized()) win.restore();
@@ -46,6 +96,8 @@ app.whenReady().then(() => {
   });
   plugins.load();
   createWindow();
+  createOverlay();
+  globalShortcut.register("Control+Y", toggleOverlay);
   system.setWakeEnabled(config.load().wakeWord);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -54,6 +106,10 @@ app.whenReady().then(() => {
 
 app.on("before-quit", () => {
   system.shutdown();
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
 
 app.on("window-all-closed", () => {
@@ -66,6 +122,31 @@ ipcMain.handle("open:external", (_event, url) => {
   }
 });
 
+ipcMain.handle("overlay:hide", () => {
+  if (overlay && !overlay.isDestroyed()) overlay.hide();
+  return true;
+});
+
+ipcMain.handle("overlay:resize", (_event, height) => {
+  if (overlay && !overlay.isDestroyed()) {
+    const clamped = Math.max(70, Math.min(520, Math.round(Number(height) || 70)));
+    overlay.setBounds({ ...overlay.getBounds(), height: clamped });
+  }
+  return true;
+});
+
+ipcMain.handle("overlay:open-main", () => {
+  if (overlay && !overlay.isDestroyed()) overlay.hide();
+  if (win && !win.isDestroyed()) {
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  } else {
+    createWindow();
+  }
+  return true;
+});
+
 config.register(ipcMain, {
   onChange(partial, next) {
     if ("wakeWord" in partial) system.setWakeEnabled(next.wakeWord);
@@ -76,3 +157,4 @@ ai.register(ipcMain);
 system.register(ipcMain, () => win);
 plugins.register(ipcMain);
 updates.register(ipcMain);
+agent.register(ipcMain);

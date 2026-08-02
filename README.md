@@ -1,6 +1,8 @@
 # ZENO
 
-My take on a personal Jarvis. It's a Windows desktop app with a spinning holographic globe you click and talk to. Under the hood it runs on whatever AI model you point it at, but it works out of the box with the free ones on OpenRouter, so using it costs nothing.
+My take on a personal Jarvis, now grown into a full assistant. It's a Windows desktop app with a spinning holographic globe you click and talk to, plus a system-wide voice assistant you summon with Ctrl+Y from anywhere. Under the hood it runs on whatever AI model you point it at, but it works out of the box with the free ones on OpenRouter, so using it costs nothing.
+
+Made by Team ZAP: [teamzap.uk](https://teamzap.uk/)
 
 ![ZENO](assets/demo.svg)
 
@@ -23,11 +25,25 @@ npm start
 
 Whichever way you install, open CONFIG on first launch, paste an OpenRouter API key (free at [openrouter.ai/keys](https://openrouter.ai/keys)) and hit save. The image generator and the PC commands work even without a key.
 
+## What's new in 2.0
+
+**The assistant island.** Press Ctrl+Y anywhere in Windows and a black pill drops from the top of your screen, greets you out loud and starts listening. Speak or type, get an answer, and it's gone again. It handles quick questions, PC commands and even full agent tasks without you ever opening the main window.
+
+**Agent mode.** Flip the agent toggle and ZENO stops just talking about tasks and starts doing them. It writes code files, creates whole projects, runs and tests them, installs packages, fixes its own errors and reports back with what it built and where. Ask it to "make me a snake game in python" and watch the steps tick by live.
+
+**Voice that actually hears you.** Speech recognition now streams what it's hearing into the input as you talk, waits longer for you to start, and keeps partial results if you trail off instead of throwing everything away. Replies come back in a warm female voice.
+
+**Deep thinking.** Toggle it on and ZENO privately reasons through your question first, then answers using its own notes. Slower, noticeably smarter on hard questions.
+
+**Token counter, copy buttons and more.** Every reply shows exactly how many tokens it cost, plus a running session total. Hover any reply for a one-click copy button.
+
 ## What it does
 
-You talk to it. Click the globe, say what you want, and it answers out loud. Replies stream in as they generate. Turn on the wake word in CONFIG and you can just say "hey zeno" from across the room without touching anything.
+You talk to it. Click the globe, say what you want, and it answers out loud. Replies stream in as they generate. Turn on the wake word in CONFIG and you can just say "hey zeno" from across the room, or press Ctrl+Y anywhere for the quick assistant.
 
 It controls your computer. Ask it to open sites and apps, search the web, change the volume, lock the screen, take screenshots, empty the recycle bin or shut the PC down on a timer. There's a live HUD around the globe showing cpu, memory, disk and uptime, and asking "system status" gets you a spoken report.
+
+It builds things. In agent mode it creates files and folders, writes real code, runs shell commands, tests what it built and iterates until it works.
 
 It sees things. Attach an image and ask about it, or say "look at my screen" and ZENO screenshots your display and tells you what's there. Drop a text file into the window and ask questions about its contents. Say "generate an image of whatever" and a picture appears in the chat.
 
@@ -40,8 +56,10 @@ If none of that fits what you need, the personality is editable in CONFIG and th
 ## The commands
 
 ```
+ctrl+y                    summon the assistant anywhere
 open youtube / github / spotify / notepad / calculator / downloads / anysite.com
 search best mechanical keyboards
+make me a portfolio website        (agent mode)
 generate an image of a neon samurai
 look at my screen
 weather in tokyo          time in new york
@@ -75,12 +93,22 @@ Whatever you return gets shown in the chat and spoken. The `ctx` object hands yo
 
 ## How the code is laid out
 
-The main process lives in `lib`: config handling, the json stores, the OpenRouter client, the system layer that talks to Windows, plugin loading and the update check are separate modules that `main.js` wires together. The renderer side splits the same way, `js/globe.js` draws the planet, `js/voice.js` handles speech, `js/engine.js` runs conversations and consensus, `js/markdown.js` and `js/commands.js` do rendering and intent parsing, and `js/app.js` glues the UI together.
+The main process lives in `lib`: config handling, the json stores, the OpenRouter client, the agent tool loop, the system layer that talks to Windows, plugin loading and the update check are separate modules that `main.js` wires together. The renderer side splits the same way, `js/globe.js` draws the planet, `js/voice.js` handles speech, `js/engine.js` runs conversations and consensus, `js/markdown.js` and `js/commands.js` do rendering and intent parsing, `js/overlay.js` powers the Ctrl+Y island, and `js/app.js` glues the UI together.
 
 Settings and data are plain json files in your user folder. Nothing leaves your machine except the API calls you make.
 
+## Changelog
+
+**2.0.0** — the ultimate update. Ctrl+Y assistant island, agent mode that creates files and runs commands, rebuilt voice recognition with live transcription, female voice, deep thinking mode, per-reply token counts with session totals, copy buttons on every reply, infrastructure page, [teamzap.uk](https://teamzap.uk/).
+
+**1.2.0** — streaming replies, chat history browser, plugins, update banner.
+
+**1.1.0** — consensus mode, wake word, screen vision, todo list.
+
+**1.0.0** — first release.
+
 ## Credits
 
-Made by Zap. GitHub [iamyakay](https://github.com/iamyakay), Discord Sethlowk.
+Made by Zap / Team ZAP. Website [teamzap.uk](https://teamzap.uk/), GitHub [iamyakay](https://github.com/iamyakay), Discord Sethlowk.
 
 MIT licensed, do what you want with it.

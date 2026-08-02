@@ -50,16 +50,33 @@
     streamHandlers.get(payload.id)?.(payload.text);
   });
 
-  async function askSingle(config, userText, imageDataUrl, onDelta) {
+  async function askSingle(config, userText, imageDataUrl, onDelta, options) {
     const model = imageDataUrl ? config.visionModel : config.primaryModel;
+    const deepThink = Boolean(options?.deepThink);
     const messages = buildMessages(config, userText, imageDataUrl);
+    let thinkUsage = null;
+    if (deepThink && userText) {
+      const thinkMessages = [
+        { role: "system", content: "You are a careful reasoner. Think through the user's request step by step: break it down, consider approaches and edge cases, note pitfalls. Output only your reasoning notes, compact but thorough. Do not write the final answer yet." },
+        ...history.slice(-6),
+        { role: "user", content: userText }
+      ];
+      const thought = await window.zeno.chat({ model, messages: thinkMessages, maxTokens: 1200 });
+      if (thought.ok) {
+        thinkUsage = thought.usage;
+        messages.splice(messages.length - 1, 0, {
+          role: "system",
+          content: `Private reasoning notes for this request (the user cannot see these, use them to give a sharper answer):\n${thought.text}`
+        });
+      }
+    }
     let result;
     if (typeof onDelta === "function") {
       streamCounter += 1;
       const id = `s${streamCounter}`;
       streamHandlers.set(id, onDelta);
       try {
-        result = await window.zeno.chatStream({ id, model, messages });
+        result = await window.zeno.chatStream({ id, model, messages, maxTokens: deepThink ? 4000 : 2048 });
       } finally {
         streamHandlers.delete(id);
       }
@@ -67,6 +84,14 @@
       result = await window.zeno.chat({ model, messages });
     }
     if (result.ok) {
+      if (thinkUsage) {
+        result.usage = {
+          prompt_tokens: Number(result.usage?.prompt_tokens || 0) + Number(thinkUsage.prompt_tokens || 0),
+          completion_tokens: Number(result.usage?.completion_tokens || 0) + Number(thinkUsage.completion_tokens || 0),
+          total_tokens: Number(result.usage?.total_tokens || 0) + Number(thinkUsage.total_tokens || 0)
+        };
+        result.deepThink = true;
+      }
       pushHistory("user", userText || "[image]");
       pushHistory("assistant", result.text);
     }
@@ -129,10 +154,20 @@
     pushHistory("user", userText || "[image]");
     pushHistory("assistant", finalText);
 
+    const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    for (const answer of [...good, verdict]) {
+      if (answer?.usage) {
+        usage.prompt_tokens += Number(answer.usage.prompt_tokens || 0);
+        usage.completion_tokens += Number(answer.usage.completion_tokens || 0);
+        usage.total_tokens += Number(answer.usage.total_tokens || 0);
+      }
+    }
+
     return {
       ok: true,
       text: finalText,
       model: "consensus",
+      usage: usage.total_tokens > 0 ? usage : null,
       consensus: {
         total: squad.length,
         agreed: good.length,
