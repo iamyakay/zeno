@@ -193,8 +193,9 @@
     '{"intent":"folder","name":"downloads|documents|pictures|music|videos|desktop|home"}',
     '{"intent":"image","prompt":"<what to draw>"}',
     '{"intent":"agent","task":"<the full task, for multi-step jobs like creating files, coding, installing, running commands>"}',
+    '{"intent":"do","task":"<a precise one-line description of the computer action to perform>"}',
     '{"intent":"chat"}',
-    "Rules: any request to open, close, launch, play, pause, skip, mute, search, control volume or brightness, lock, sleep, shutdown, screenshot, type, or manage apps and windows is an action, however casually it is phrased. turn it up = volume-up, kill spotify = kill target spotify, shut it down = shutdown. Multi-step jobs that create or edit files, write code, install things or run commands are agent. Pure questions, opinions and conversation are chat. When genuinely torn between chat and an action, pick the action. minutes/level/key/target/page fields only when relevant."
+    "Rules: any request to open, close, launch, play, pause, skip, mute, search, control volume or brightness, lock, sleep, shutdown, screenshot, type, or manage apps and windows is an action, however casually it is phrased. turn it up = volume-up, kill spotify = kill target spotify, shut it down = shutdown. Multi-step jobs that create or edit files, write code, install things or run commands are agent. If the user clearly wants the computer to do something but none of the action formats fit, use do with a precise task description, for example: empty the downloads folder into a backup zip, set the default browser, toggle dark mode in windows, connect to a wifi network, change the wallpaper. Pure questions, opinions and conversation are chat. When genuinely torn between chat and an action, pick the action. minutes/level/key/target/page fields only when relevant."
   ].join("\n");
 
   async function interpret(config, text) {
@@ -233,6 +234,7 @@
     if (intent === "folder" && parsed.name) return { kind: "action", action: { type: "folder", name: String(parsed.name) } };
     if (intent === "image" && parsed.prompt) return { kind: "image", prompt: String(parsed.prompt) };
     if (intent === "agent" && parsed.task) return { kind: "agent", task: String(parsed.task) };
+    if (intent === "do" && parsed.task) return { kind: "agent", task: String(parsed.task) };
     return null;
   }
 
