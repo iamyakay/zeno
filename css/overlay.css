@@ -9,69 +9,82 @@ html, body {
 }
 
 #island {
-  width: 444px;
-  margin: 8px auto 0;
-  background: rgba(8, 8, 10, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 28px;
-  padding: 10px 14px 12px;
-  animation: island-in 260ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  width: 500px;
+  margin: 10px auto 0;
+  background: linear-gradient(160deg, rgba(16, 17, 22, 0.94), rgba(8, 9, 12, 0.97));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 30px;
+  padding: 12px 16px 14px;
+  animation: island-in 320ms cubic-bezier(0.34, 1.4, 0.64, 1);
   overflow: hidden;
+  backdrop-filter: blur(24px) saturate(1.3);
+}
+
+#island::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 30px;
+  background: radial-gradient(90% 60% at 50% -20%, rgba(140, 140, 255, 0.09), transparent 70%);
+  pointer-events: none;
 }
 
 @keyframes island-in {
-  from { opacity: 0; transform: translateY(-24px) scale(0.9); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateY(-28px) scale(0.9); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
 }
 
 #island.leaving {
-  animation: island-out 200ms ease forwards;
+  animation: island-out 220ms ease forwards;
 }
 
 @keyframes island-out {
-  to { opacity: 0; transform: translateY(-24px) scale(0.92); }
+  to { opacity: 0; transform: translateY(-28px) scale(0.92); filter: blur(4px); }
 }
 
 #island-top {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 44px;
+  min-height: 46px;
+  -webkit-app-region: drag;
 }
 
+#island-top button { -webkit-app-region: no-drag; }
+
 #island-orb {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, #6ee7ff, #6c5ce7 58%, #1c1235);
+  background: radial-gradient(circle at 34% 30%, #7ceaff, #6c5ce7 58%, #191036);
   display: grid;
   place-items: center;
-  box-shadow: 0 0 18px rgba(110, 110, 255, 0.55);
-  transition: box-shadow 250ms ease;
+  box-shadow: 0 0 22px rgba(115, 110, 255, 0.55), inset 0 0 12px rgba(255, 255, 255, 0.12);
+  transition: box-shadow 280ms ease, background 280ms ease;
 }
 
 #island-orb span {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
   filter: blur(0.4px);
-  animation: orb-breathe 2.4s ease-in-out infinite;
+  animation: orb-breathe 2.6s ease-in-out infinite;
 }
 
 @keyframes orb-breathe {
-  50% { transform: scale(0.72); opacity: 0.7; }
+  50% { transform: scale(0.7); opacity: 0.65; }
 }
 
 #island.listening #island-orb {
-  background: radial-gradient(circle at 34% 30%, #ff9ecb, #ff2e6c 58%, #35081a);
-  box-shadow: 0 0 26px rgba(255, 46, 108, 0.65);
+  background: radial-gradient(circle at 34% 30%, #ffa5cf, #ff2e6c 58%, #380a1d);
+  box-shadow: 0 0 30px rgba(255, 46, 108, 0.65);
 }
 
 #island.thinking #island-orb {
-  background: radial-gradient(circle at 34% 30%, #ffe89e, #ffb020 58%, #35240a);
-  box-shadow: 0 0 26px rgba(255, 176, 32, 0.6);
+  background: radial-gradient(circle at 34% 30%, #ffe9a0, #ffb020 58%, #38260a);
+  box-shadow: 0 0 30px rgba(255, 176, 32, 0.6);
 }
 
 #island.thinking #island-orb span { animation-duration: 0.7s; }
@@ -81,14 +94,14 @@ html, body {
 
 #island-state {
   font-size: 10px;
-  letter-spacing: 3.5px;
-  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 4px;
+  color: rgba(255, 255, 255, 0.42);
   text-transform: uppercase;
 }
 
 #island-line {
   font-size: 14px;
-  color: #f2f2f7;
+  color: #f4f4f8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -99,7 +112,7 @@ html, body {
   display: none;
   align-items: center;
   gap: 3px;
-  height: 26px;
+  height: 28px;
 }
 
 #island.listening #island-wave { display: flex; }
@@ -109,13 +122,14 @@ html, body {
   border-radius: 2px;
   background: #ff5c93;
   animation: wave-bounce 0.9s ease-in-out infinite;
+  transform-origin: center;
 }
 
-#island-wave i:nth-child(1) { height: 8px; animation-delay: 0s; }
-#island-wave i:nth-child(2) { height: 16px; animation-delay: 0.12s; }
-#island-wave i:nth-child(3) { height: 22px; animation-delay: 0.24s; }
-#island-wave i:nth-child(4) { height: 14px; animation-delay: 0.36s; }
-#island-wave i:nth-child(5) { height: 9px; animation-delay: 0.48s; }
+#island-wave i:nth-child(1) { height: 9px; animation-delay: 0s; }
+#island-wave i:nth-child(2) { height: 17px; animation-delay: 0.12s; }
+#island-wave i:nth-child(3) { height: 23px; animation-delay: 0.24s; }
+#island-wave i:nth-child(4) { height: 15px; animation-delay: 0.36s; }
+#island-wave i:nth-child(5) { height: 10px; animation-delay: 0.48s; }
 
 @keyframes wave-bounce {
   50% { transform: scaleY(0.35); }
@@ -123,33 +137,69 @@ html, body {
 
 #island-expand, #island-close {
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
+  width: 29px;
+  height: 29px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.07);
   color: rgba(255, 255, 255, 0.55);
   font-size: 12px;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: all 170ms ease;
 }
 
 #island-expand:hover, #island-close:hover {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
+  transform: scale(1.06);
+}
+
+#island-quick {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.quick {
+  flex: 1;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 170ms ease;
+}
+
+.quick:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.quick:active { transform: translateY(0) scale(0.96); }
+
+.quick.live {
+  background: #ff2e6c;
+  border-color: #ff2e6c;
+  color: #fff;
 }
 
 #island-reply {
   display: none;
-  max-height: 220px;
+  max-height: 250px;
   overflow-y: auto;
   margin: 10px 4px 4px;
-  padding: 10px 12px;
+  padding: 11px 13px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
   font-size: 13px;
-  line-height: 1.5;
-  color: #e8e8ee;
+  line-height: 1.55;
+  color: #eaeaef;
   white-space: pre-wrap;
   word-break: break-word;
   -webkit-user-select: text;
@@ -187,42 +237,37 @@ html, body {
 
 #island-input {
   flex: 1;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.06);
-  color: #f2f2f7;
+  height: 38px;
+  padding: 0 15px;
+  border-radius: 19px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.055);
+  color: #f4f4f8;
   font-size: 13px;
   font-family: inherit;
   outline: none;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
-#island-input:focus { border-color: rgba(140, 140, 255, 0.5); }
+#island-input:focus { border-color: rgba(140, 140, 255, 0.55); background: rgba(255, 255, 255, 0.08); }
 
-#island-input::placeholder { color: rgba(255, 255, 255, 0.35); }
+#island-input::placeholder { color: rgba(255, 255, 255, 0.32); }
 
-#island-mic {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.75);
+#island-send {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 19px;
+  border: 1px solid rgba(140, 140, 255, 0.35);
+  background: rgba(120, 115, 255, 0.18);
+  color: #c9c6ff;
   font-size: 11px;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   cursor: pointer;
   font-family: inherit;
-  transition: all 150ms ease;
+  transition: all 170ms ease;
 }
 
-#island-mic:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
-
-#island.listening #island-mic {
-  background: #ff2e6c;
-  border-color: #ff2e6c;
-  color: #fff;
-}
+#island-send:hover { background: rgba(120, 115, 255, 0.35); color: #fff; }
 
 #island-reply::-webkit-scrollbar { width: 5px; }
 #island-reply::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 3px; }

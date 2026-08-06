@@ -19,6 +19,8 @@
     island.classList.toggle("thinking", mode === "thinking");
     stateEl.textContent = mode === "listening" ? "LISTENING" : mode === "thinking" ? "WORKING" : "ZENO";
     if (line != null) lineEl.textContent = line;
+    const mic = document.querySelector('.quick[data-act="mic"]');
+    if (mic) mic.classList.toggle("live", mode === "listening");
     syncHeight();
   }
 
@@ -238,7 +240,16 @@
     handle(value);
   });
 
-  $("island-mic").addEventListener("click", startListening);
+  const micBtn = document.querySelector('.quick[data-act="mic"]');
+
+  for (const btn of document.querySelectorAll(".quick[data-cmd]")) {
+    btn.addEventListener("click", async () => {
+      const result = await window.zeno.runAction({ type: "system", name: btn.dataset.cmd });
+      lineEl.textContent = result.ok ? (result.detail || "done") : `couldn't do that: ${result.error}`;
+    });
+  }
+
+  micBtn.addEventListener("click", startListening);
   $("island-close").addEventListener("click", hide);
   $("island-expand").addEventListener("click", () => window.zeno.overlayOpenMain());
 

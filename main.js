@@ -70,15 +70,16 @@ function createTray() {
 
 function createOverlay() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
+  const saved = config.load().overlayPos;
   overlay = new BrowserWindow({
-    width: 460,
-    height: 260,
-    x: Math.round((width - 460) / 2),
-    y: 8,
+    width: 520,
+    height: 300,
+    x: saved?.x ?? Math.round((width - 520) / 2),
+    y: saved?.y ?? 10,
     frame: false,
     transparent: true,
     resizable: false,
-    movable: false,
+    movable: true,
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
@@ -96,6 +97,11 @@ function createOverlay() {
   overlay.setAlwaysOnTop(true, "screen-saver");
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   overlay.loadFile("overlay.html");
+  overlay.on("moved", () => {
+    if (!overlay || overlay.isDestroyed()) return;
+    const [x, y] = overlay.getPosition();
+    config.save({ ...config.load(), overlayPos: { x, y } });
+  });
   overlay.on("blur", () => {
     if (overlay && !overlay.isDestroyed() && overlay.isVisible()) {
       overlay.webContents.send("overlay:soft-hide");
@@ -108,8 +114,6 @@ function toggleOverlay() {
   if (overlay.isVisible()) {
     overlay.hide();
   } else {
-    const { width } = screen.getPrimaryDisplay().workAreaSize;
-    overlay.setPosition(Math.round((width - 460) / 2), 8);
     overlay.show();
     overlay.focus();
     overlay.webContents.send("overlay:activate");
@@ -161,7 +165,7 @@ ipcMain.handle("overlay:hide", () => {
 
 ipcMain.handle("overlay:resize", (_event, height) => {
   if (overlay && !overlay.isDestroyed()) {
-    const clamped = Math.max(70, Math.min(520, Math.round(Number(height) || 70)));
+    const clamped = Math.max(84, Math.min(620, Math.round(Number(height) || 84)));
     overlay.setBounds({ ...overlay.getBounds(), height: clamped });
   }
   return true;

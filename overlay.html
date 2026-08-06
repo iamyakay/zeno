@@ -17,13 +17,23 @@
       <div id="island-wave">
         <i></i><i></i><i></i><i></i><i></i>
       </div>
-      <button type="button" id="island-expand" title="open ZENO">◱</button>
+      <button type="button" id="island-expand" title="open full ZENO">◱</button>
       <button type="button" id="island-close" title="hide (ctrl+y)">✕</button>
+    </div>
+    <div id="island-quick">
+      <button type="button" class="quick" data-act="mic" title="voice">🎙</button>
+      <button type="button" class="quick" data-cmd="play-pause" title="play or pause">⏯</button>
+      <button type="button" class="quick" data-cmd="next" title="next track">⏭</button>
+      <button type="button" class="quick" data-cmd="volume-down" title="volume down">🔉</button>
+      <button type="button" class="quick" data-cmd="volume-up" title="volume up">🔊</button>
+      <button type="button" class="quick" data-cmd="mute" title="mute">🔇</button>
+      <button type="button" class="quick" data-cmd="screenshot" title="screenshot">📷</button>
+      <button type="button" class="quick" data-cmd="lock" title="lock pc">🔒</button>
     </div>
     <div id="island-reply"></div>
     <form id="island-form">
-      <input id="island-input" type="text" placeholder="type or just speak..." autocomplete="off">
-      <button type="button" id="island-mic">MIC</button>
+      <input id="island-input" type="text" placeholder="say or type anything..." autocomplete="off">
+      <button type="submit" id="island-send">GO</button>
     </form>
   </div>
   <script src="js/commands.js"></script>
