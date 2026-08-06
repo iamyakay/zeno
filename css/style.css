@@ -294,8 +294,7 @@ body.nav-open #sidebar-veil { opacity: 1; pointer-events: auto; }
 .nav-btn {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding: 13px 16px;
+  padding: 13px 18px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--r-sm);
@@ -309,17 +308,7 @@ body.nav-open #sidebar-veil { opacity: 1; pointer-events: auto; }
   transition: all 200ms var(--ease-out);
 }
 
-.nav-btn i {
-  font-style: normal;
-  font-size: 14px;
-  width: 18px;
-  text-align: center;
-  transition: transform 200ms var(--ease-spring);
-}
-
 .nav-btn:hover { color: var(--text); border-color: var(--panel-border); background: rgba(255, 255, 255, 0.02); transform: translateX(4px); }
-
-.nav-btn:hover i { transform: scale(1.2); }
 
 .nav-btn.active {
   color: var(--accent);
