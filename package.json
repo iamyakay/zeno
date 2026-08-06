@@ -1,6 +1,6 @@
 {
   "name": "zeno",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "ZENO, the ultimate personal AI system by Team ZAP",
   "main": "main.js",
   "scripts": {

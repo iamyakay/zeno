@@ -99,6 +99,8 @@ Settings and data are plain json files in your user folder. Nothing leaves your 
 
 ## Changelog
 
+**2.3.0**  the floating hub update. The Ctrl+Y island is now a full control surface: drag it anywhere on screen and it remembers its spot, quick buttons for play/pause, skip, volume, mute, screenshot and lock, plus voice and chat, so the main window becomes optional. The whole interface got a premium pass with glass panels, layered glows and springy motion. And commands that were never programmed now work anyway: if a request doesn't match anything built in, ZENO describes the action and safely executes it through agent mode.
+
 **2.2.0**  ZENO finally hears you properly. Speech recognition is now OpenAI's Whisper AI running locally on your PC, replacing the ancient Windows recognizer entirely. It records through your mic with noise suppression, detects when you stop talking, and transcribes with an actual AI model, offline and free. First launch downloads the engine and model (about 150 MB, one time, automatic). The old recognizer stays as a fallback if setup fails.
 
 **2.1.0**  real AI voice and understands everything. ZENO now speaks with Microsoft's neural AI voice (Aria) for free, no key needed, and falls back to the local voice offline. New AI intent router: commands that aren't in the built-in list still work, "open valorant", "pause the music", "skip this song", "close chrome", "put the pc to sleep" all get understood and executed, and ZENO can now launch any app installed on your PC by name.
