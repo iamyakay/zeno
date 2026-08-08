@@ -896,6 +896,9 @@
     $("cfg-voice").checked = Boolean(config.voiceReplies);
     $("cfg-consensus").checked = Boolean(config.consensusEnabled);
     $("cfg-wake").checked = Boolean(config.wakeWord);
+    $("cfg-convo").checked = Boolean(config.conversationMode);
+    $("cfg-autoupdate").checked = config.autoUpdate !== false;
+    $("cfg-startup").checked = Boolean(config.startWithWindows);
     $("cfg-persona").value = config.persona || "";
     fillMicList();
   }
@@ -913,6 +916,9 @@
       voiceReplies: $("cfg-voice").checked,
       consensusEnabled: $("cfg-consensus").checked,
       wakeWord: $("cfg-wake").checked,
+      conversationMode: $("cfg-convo").checked,
+      autoUpdate: $("cfg-autoupdate").checked,
+      startWithWindows: $("cfg-startup").checked,
       persona: $("cfg-persona").value.trim(),
       micDevice: $("cfg-mic").value
     });
@@ -1091,10 +1097,27 @@
     try {
       const info = await window.zeno.checkUpdate();
       if (!info.update) return;
-      $("update-text").textContent = `ZENO ${info.latest} is out, you're on ${info.current}`;
+      const autoUpdate = config.autoUpdate !== false;
+      $("update-text").textContent = `ZENO ${info.latest} is out${autoUpdate && info.downloadUrl ? ", downloading..." : ""}`;
       $("update-banner").classList.remove("off");
-      $("update-get").onclick = () => window.zeno.openExternal(info.url);
       $("update-dismiss").onclick = () => $("update-banner").classList.add("off");
+      if (autoUpdate && info.downloadUrl) {
+        window.zeno.onUpdateProgress((pct) => {
+          $("update-text").textContent = `ZENO ${info.latest} downloading... ${pct}%`;
+        });
+        const result = await window.zeno.downloadUpdate(info.downloadUrl);
+        if (result.ok) {
+          $("update-text").textContent = `ZENO ${info.latest} ready, will install on next quit`;
+          $("update-get").textContent = "QUIT AND UPDATE";
+          $("update-get").onclick = () => window.zeno.openExternal("zeno://quit");
+        } else {
+          $("update-text").textContent = `ZENO ${info.latest} is out`;
+          $("update-get").onclick = () => window.zeno.openExternal(info.url);
+        }
+      } else {
+        $("update-get").textContent = "GET IT";
+        $("update-get").onclick = () => window.zeno.openExternal(info.url);
+      }
     } catch {}
   }
 
