@@ -180,6 +180,9 @@ ipcMain.handle("overlay:open-main", () => {
 config.register(ipcMain, {
   onChange(partial, next) {
     if ("wakeWord" in partial) system.setWakeEnabled(next.wakeWord);
+    if ("startWithWindows" in partial) {
+      app.setLoginItemSettings({ openAtLogin: Boolean(next.startWithWindows), openAsHidden: true });
+    }
   }
 });
 store.register(ipcMain);
