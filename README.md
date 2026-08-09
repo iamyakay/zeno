@@ -4,7 +4,11 @@ My take on a personal Jarvis, now grown into a full assistant. It's a Windows de
 
 Made by Team ZAP: [teamzap.uk](https://teamzap.uk/)
 
-![ZENO](assets/demo.svg)
+### Main window
+![ZENO main window](assets/shots/main.png)
+
+### Ctrl+Y floating assistant
+![ZENO floating overlay](assets/shots/overlay.png)
 
 I built this because I wanted one place where I could ask questions, control my PC and mess around with different models without opening six browser tabs. It grew from there.
 
