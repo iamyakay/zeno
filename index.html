@@ -28,6 +28,7 @@
       <button class="nav-btn active" data-view="core">CORE</button>
       <button class="nav-btn" data-view="chat">CHAT</button>
       <button class="nav-btn" data-view="history">HISTORY</button>
+      <button class="nav-btn" data-view="log">LOG</button>
       <button class="nav-btn" data-view="config">CONFIG</button>
       <button class="nav-btn" data-view="credits">CREDITS</button>
     </nav>
@@ -104,6 +105,15 @@
     <section id="view-history" class="view">
       <h2>CHAT HISTORY</h2>
       <div id="history-list"></div>
+    </section>
+
+    <section id="view-log" class="view">
+      <h2>ACTIVITY LOG</h2>
+      <div class="log-toolbar">
+        <button type="button" id="log-clear" class="ghost-btn">clear log</button>
+        <span id="log-count" class="hint"></span>
+      </div>
+      <div id="activity-log"></div>
     </section>
 
     <section id="view-config" class="view">

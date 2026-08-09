@@ -1221,3 +1221,109 @@ button { font-family: var(--mono); cursor: pointer; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+#view-log { overflow-y: auto; gap: 14px; padding-top: 76px; }
+
+#view-log h2 {
+  font-size: 15px;
+  letter-spacing: 7px;
+  color: var(--accent);
+  text-shadow: 0 0 16px var(--accent-dim);
+}
+
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+#activity-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.log-entry {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 11px 16px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  animation: msg-in 260ms var(--ease-out);
+  transition: border-color 180ms ease;
+}
+
+.log-entry:hover { border-color: var(--panel-border-bright); }
+
+.log-entry.action { border-left: 2px solid var(--accent-dim); }
+.log-entry.agent { border-left: 2px solid var(--warn); }
+.log-entry.error { border-left: 2px solid var(--danger); }
+
+.log-time {
+  flex: 0 0 52px;
+  color: var(--text-faint);
+  letter-spacing: 1px;
+  padding-top: 1px;
+}
+
+.log-kind {
+  flex: 0 0 58px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--accent-dim);
+  padding-top: 2px;
+  text-transform: uppercase;
+}
+
+.log-body { flex: 1; color: var(--text); line-height: 1.45; }
+
+.log-detail { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+.confirm-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 20px;
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  letter-spacing: 1px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55), 0 0 24px var(--danger-glow);
+  animation: hud-in 300ms var(--ease-spring);
+}
+
+.confirm-toast button {
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.confirm-run {
+  background: var(--danger-glow);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.confirm-run:hover { background: var(--danger); color: #fff; }
+
+.confirm-cancel {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+}
+
+.confirm-cancel:hover { color: var(--text); }
