@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld("zeno", {
   onAiDelta: (callback) => ipcRenderer.on("ai:delta", (_event, payload) => callback(payload)),
   checkUpdate: () => ipcRenderer.invoke("app:update-check"),
   appVersion: () => ipcRenderer.invoke("app:version"),
+  downloadUpdate: (url) => ipcRenderer.invoke("app:update-download", url),
+  onUpdateProgress: (cb) => ipcRenderer.on("app:update-progress", (_e, pct) => cb(pct)),
   listen: () => ipcRenderer.invoke("os:listen"),
   cancelListen: () => ipcRenderer.invoke("os:listen-cancel"),
   ttsToken: () => ipcRenderer.invoke("tts:token"),

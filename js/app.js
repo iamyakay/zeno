@@ -346,6 +346,22 @@
     }
   }
 
+  const activityLog = [];
+
+  function logActivity(kind, text, detail) {
+    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    activityLog.unshift({ kind, text, detail: detail || "", time: now });
+    if (activityLog.length > 200) activityLog.pop();
+    const view = $("activity-log");
+    if (!view) return;
+    const entry = document.createElement("div");
+    entry.className = `log-entry ${kind}`;
+    entry.innerHTML = `<span class="log-time">${now}</span><span class="log-kind">${kind}</span><div class="log-body">${text}${detail ? `<div class="log-detail">${detail}</div>` : ""}</div>`;
+    view.insertBefore(entry, view.firstChild);
+    const countEl = $("log-count");
+    if (countEl) countEl.textContent = `${activityLog.length} entries`;
+  }
+
   async function runAction(logId, action) {
     setBusy(true);
     const result = await window.zeno.runAction(action);
@@ -356,9 +372,11 @@
       else if (action.type === "system") label = result.detail;
       else label = `opened ${action.name || action.url}`;
       addMessage(logId, "zeno", `done. ${label}`);
+      logActivity("action", label || action.type);
       if ($("core-voice").checked) window.ZenoVoice.speak(`done, ${label}`);
     } else {
       addMessage(logId, "zeno", `couldn't do that: ${result.error}`);
+      logActivity("error", action.type, result.error);
     }
   }
 
@@ -395,6 +413,22 @@
   });
 
   async function runAgentTask(logId, task) {
+    const DESTRUCTIVE = /\b(delete|remove|format|wipe|rm|drop|truncate|uninstall)\b/i;
+    if (DESTRUCTIVE.test(task)) {
+      const confirmed = await new Promise((resolve) => {
+        const toast = document.createElement("div");
+        toast.className = "confirm-toast";
+        toast.innerHTML = `<span>run this task? it may be irreversible</span><button class="confirm-run">RUN</button><button class="confirm-cancel">CANCEL</button>`;
+        document.body.appendChild(toast);
+        toast.querySelector(".confirm-run").onclick = () => { toast.remove(); resolve(true); };
+        toast.querySelector(".confirm-cancel").onclick = () => { toast.remove(); resolve(false); };
+        setTimeout(() => { if (toast.isConnected) { toast.remove(); resolve(false); } }, 12000);
+      });
+      if (!confirmed) {
+        addMessage(logId, "zeno", "task cancelled.");
+        return;
+      }
+    }
     setBusy(true);
     const log = $(logId);
     agentStepsEl = document.createElement("div");
@@ -408,9 +442,11 @@
     const tokenNote = result.tokens ? ` · ${Number(result.tokens).toLocaleString()} tokens` : "";
     if (result.ok) {
       addMessage(logId, "zeno", result.answer, null, `agent mode · ${result.steps?.length || 0} steps${tokenNote}`);
+      logActivity("agent", task.slice(0, 80), `${result.steps?.length || 0} steps`);
       if ($("core-voice").checked) window.ZenoVoice.speak(result.answer);
     } else {
       addMessage(logId, "zeno", `agent failed: ${result.error}`, null, `agent mode${tokenNote}`);
+      logActivity("error", task.slice(0, 80), result.error);
     }
   }
 
@@ -804,6 +840,17 @@
     closeSidebar();
   }
 
+  const logClearBtn = $("log-clear");
+  if (logClearBtn) {
+    logClearBtn.addEventListener("click", () => {
+      activityLog.length = 0;
+      const view = $("activity-log");
+      if (view) view.innerHTML = "";
+      const countEl = $("log-count");
+      if (countEl) countEl.textContent = "";
+    });
+  }
+
   for (const btn of document.querySelectorAll(".nav-btn")) {
     btn.addEventListener("click", () => switchView(btn.dataset.view));
   }
@@ -896,6 +943,9 @@
     $("cfg-voice").checked = Boolean(config.voiceReplies);
     $("cfg-consensus").checked = Boolean(config.consensusEnabled);
     $("cfg-wake").checked = Boolean(config.wakeWord);
+    $("cfg-convo").checked = Boolean(config.conversationMode);
+    $("cfg-autoupdate").checked = config.autoUpdate !== false;
+    $("cfg-startup").checked = Boolean(config.startWithWindows);
     $("cfg-persona").value = config.persona || "";
     fillMicList();
   }
@@ -913,6 +963,9 @@
       voiceReplies: $("cfg-voice").checked,
       consensusEnabled: $("cfg-consensus").checked,
       wakeWord: $("cfg-wake").checked,
+      conversationMode: $("cfg-convo").checked,
+      autoUpdate: $("cfg-autoupdate").checked,
+      startWithWindows: $("cfg-startup").checked,
       persona: $("cfg-persona").value.trim(),
       micDevice: $("cfg-mic").value
     });
@@ -1091,10 +1144,27 @@
     try {
       const info = await window.zeno.checkUpdate();
       if (!info.update) return;
-      $("update-text").textContent = `ZENO ${info.latest} is out, you're on ${info.current}`;
+      const autoUpdate = config.autoUpdate !== false;
+      $("update-text").textContent = `ZENO ${info.latest} is out${autoUpdate && info.downloadUrl ? ", downloading..." : ""}`;
       $("update-banner").classList.remove("off");
-      $("update-get").onclick = () => window.zeno.openExternal(info.url);
       $("update-dismiss").onclick = () => $("update-banner").classList.add("off");
+      if (autoUpdate && info.downloadUrl) {
+        window.zeno.onUpdateProgress((pct) => {
+          $("update-text").textContent = `ZENO ${info.latest} downloading... ${pct}%`;
+        });
+        const result = await window.zeno.downloadUpdate(info.downloadUrl);
+        if (result.ok) {
+          $("update-text").textContent = `ZENO ${info.latest} ready, will install on next quit`;
+          $("update-get").textContent = "QUIT AND UPDATE";
+          $("update-get").onclick = () => window.zeno.openExternal("zeno://quit");
+        } else {
+          $("update-text").textContent = `ZENO ${info.latest} is out`;
+          $("update-get").onclick = () => window.zeno.openExternal(info.url);
+        }
+      } else {
+        $("update-get").textContent = "GET IT";
+        $("update-get").onclick = () => window.zeno.openExternal(info.url);
+      }
     } catch {}
   }
 

@@ -9,6 +9,8 @@
   let busy = false;
   let listening = false;
   const history = [];
+  const cmdHistory = [];
+  let cmdHistoryIdx = -1;
 
   function speak(text) {
     return window.ZenoVoice.speak(text);
@@ -72,90 +74,6 @@
     }, 190);
   }
 
-  const AGENT_HINT = /\b(make|create|build|write|code|generate|set ?up|scaffold)\b.*\b(file|files|folder|project|script|website|page|app|html|python|server|game)\b|\brun\b.*\b(command|script|server|test)\b|\binstall\b/i;
-
-  async function handle(text) {
-    const trimmed = String(text || "").trim();
-    if (!trimmed || busy) return;
-    busy = true;
-    clearReply();
-    setState("thinking", trimmed);
-    try {
-      const action = window.ZenoCommands.parseAction(trimmed);
-      if (action) {
-        const result = await window.zeno.runAction(action);
-        const line = result.ok ? (result.detail || "done") : `couldn't do that: ${result.error}`;
-        setState("idle", line);
-        speak(result.ok ? `done. ${action.type === "search" ? "searching" : ""}` : "sorry, that didn't work");
-        return;
-      }
-      if (AGENT_HINT.test(trimmed)) {
-        setState("thinking", "on it, working on your task...");
-        const result = await window.zeno.agentRun(trimmed);
-        if (result.ok) {
-          setState("idle", "task complete");
-          showReplyWithSteps(result.answer);
-          speak("all done");
-        } else {
-          setState("idle", "task failed");
-          showReplyWithSteps(result.error);
-          speak("I hit a problem with that task");
-        }
-        return;
-      }
-      if (!config) config = await window.zeno.getConfig();
-      if (config.apiKey && trimmed.length <= 200) {
-        const routed = await window.ZenoEngine.interpret(config, trimmed);
-        if (routed) {
-          if (routed.kind === "action") {
-            const result = await window.zeno.runAction(routed.action);
-            const line = result.ok ? (result.detail || "done") : `couldn't do that: ${result.error}`;
-            setState("idle", line);
-            speak(result.ok ? `done, ${line}` : "sorry, that didn't work");
-            return;
-          }
-          if (routed.kind === "agent") {
-            setState("thinking", "on it, working on your task...");
-            const result = await window.zeno.agentRun(routed.task);
-            if (result.ok) {
-              setState("idle", "task complete");
-              showReplyWithSteps(result.answer);
-              speak("all done");
-            } else {
-              setState("idle", "task failed");
-              showReplyWithSteps(result.error);
-              speak("I hit a problem with that task");
-            }
-            return;
-          }
-        }
-      }
-      if (!config.apiKey) {
-        setState("idle", "I need an API key first, open ZENO and set one in CONFIG");
-        speak("I need an API key first. open the main window and set one in config.");
-        return;
-      }
-      const messages = [
-        { role: "system", content: `You are ZENO, ${config.userName || "the user"}'s voice assistant on their Windows PC. You are warm, upbeat and a little playful. Keep replies short and conversational, two or three sentences, this is a quick voice popup. No markdown, no emoji.` },
-        ...history,
-        { role: "user", content: trimmed }
-      ];
-      const result = await window.zeno.chat({ model: config.primaryModel, messages, maxTokens: 400 });
-      if (result.ok) {
-        history.push({ role: "user", content: trimmed });
-        history.push({ role: "assistant", content: result.text });
-        while (history.length > 10) history.shift();
-        setState("idle", "here you go");
-        showReply(result.text);
-        speak(result.text);
-      } else {
-        setState("idle", `error: ${result.error}`);
-      }
-    } finally {
-      busy = false;
-    }
-  }
-
   function showReplyWithSteps(answer) {
     replyEl.classList.add("on");
     const div = document.createElement("div");
@@ -164,6 +82,124 @@
     replyEl.appendChild(div);
     replyEl.scrollTop = replyEl.scrollHeight;
     syncHeight();
+  }
+
+  function pushCmdHistory(text) {
+    if (!text || cmdHistory[0] === text) return;
+    cmdHistory.unshift(text);
+    if (cmdHistory.length > 40) cmdHistory.pop();
+    cmdHistoryIdx = -1;
+  }
+
+  const AGENT_HINT = /\b(make|create|build|write|code|generate|set ?up|scaffold)\b.*\b(file|files|folder|project|script|website|page|app|html|python|server|game)\b|\brun\b.*\b(command|script|server|test)\b|\binstall\b/i;
+
+  const COMMAND_HINT = /\b(open|close|launch|start|play|pause|stop|next|previous|mute|volume|lock|shutdown|restart|screenshot|search|find|set|turn|switch|focus|remind|timer|kill|clip|clipboard)\b/i;
+
+  async function handle(text) {
+    const trimmed = String(text || "").trim();
+    if (!trimmed || busy) return;
+    busy = true;
+    pushCmdHistory(trimmed);
+    clearReply();
+    setState("thinking", trimmed);
+    try {
+      if (!config) config = await window.zeno.getConfig();
+
+      const action = window.ZenoCommands.parseAction(trimmed);
+      if (action) {
+        const result = await window.zeno.runAction(action);
+        const line = result.ok ? (result.detail || "done") : `couldn't do that: ${result.error}`;
+        setState("idle", line);
+        speak(result.ok ? `done` : "sorry, that didn't work");
+        return;
+      }
+
+      if (AGENT_HINT.test(trimmed)) {
+        setState("thinking", "on it...");
+        const result = await window.zeno.agentRun(trimmed);
+        if (result.ok) {
+          setState("idle", "task complete");
+          showReplyWithSteps(result.answer);
+          speak("all done");
+        } else {
+          setState("idle", "task failed");
+          showReplyWithSteps(result.error);
+          speak("I hit a problem");
+        }
+        return;
+      }
+
+      const looksLikeCommand = COMMAND_HINT.test(trimmed) || trimmed.split(/\s+/).length <= 5;
+      if (config.apiKey && looksLikeCommand) {
+        const routed = await window.ZenoEngine.interpret(config, trimmed);
+        if (routed) {
+          if (routed.kind === "action") {
+            const result = await window.zeno.runAction(routed.action);
+            const line = result.ok ? (result.detail || "done") : `couldn't do that: ${result.error}`;
+            setState("idle", line);
+            speak(result.ok ? `done` : "sorry, that didn't work");
+            return;
+          }
+          if (routed.kind === "agent") {
+            setState("thinking", "on it...");
+            const result = await window.zeno.agentRun(routed.task);
+            if (result.ok) {
+              setState("idle", "task complete");
+              showReplyWithSteps(result.answer);
+              speak("all done");
+            } else {
+              setState("idle", "task failed");
+              showReplyWithSteps(result.error);
+              speak("I hit a problem");
+            }
+            return;
+          }
+        }
+      }
+
+      if (!config.apiKey) {
+        setState("idle", "need an API key. open ZENO and set one in CONFIG");
+        speak("I need an API key first");
+        return;
+      }
+
+      const messages = [
+        { role: "system", content: `You are ZENO, ${config.userName || "the user"}'s voice assistant on their Windows PC. Warm, upbeat, a little playful. Keep replies short, two or three sentences max. No markdown, no emoji.` },
+        ...history,
+        { role: "user", content: trimmed }
+      ];
+
+      const streamId = `ov${Date.now()}`;
+      let streamed = "";
+      replyEl.classList.add("on");
+      replyEl.textContent = "";
+      setState("idle", "...");
+
+      window.zeno.onAiDelta((payload) => {
+        if (payload.id !== streamId) return;
+        streamed += payload.text;
+        replyEl.textContent = streamed;
+        replyEl.scrollTop = replyEl.scrollHeight;
+        syncHeight();
+      });
+
+      const result = await window.zeno.chatStream({ id: streamId, model: config.primaryModel, messages, maxTokens: 400 });
+
+      if (result.ok) {
+        history.push({ role: "user", content: trimmed });
+        history.push({ role: "assistant", content: result.text });
+        while (history.length > 12) history.shift();
+        showReply(result.text);
+        await speak(result.text);
+        if (config.conversationMode && !busy && !listening) {
+          setTimeout(() => { if (!busy && !listening) startListening(); }, 300);
+        }
+      } else {
+        setState("idle", `error: ${result.error}`);
+      }
+    } finally {
+      busy = false;
+    }
   }
 
   async function startListening() {
@@ -233,11 +269,31 @@
     event.preventDefault();
     const value = input.value;
     input.value = "";
+    cmdHistoryIdx = -1;
     if (listening) {
       window.ZenoVoice.cancelListening();
       listening = false;
     }
     handle(value);
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (cmdHistoryIdx < cmdHistory.length - 1) {
+        cmdHistoryIdx += 1;
+        input.value = cmdHistory[cmdHistoryIdx];
+      }
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (cmdHistoryIdx > 0) {
+        cmdHistoryIdx -= 1;
+        input.value = cmdHistory[cmdHistoryIdx];
+      } else {
+        cmdHistoryIdx = -1;
+        input.value = "";
+      }
+    }
   });
 
   const micBtn = document.querySelector('.quick[data-act="mic"]');
@@ -249,7 +305,7 @@
     });
   }
 
-  micBtn.addEventListener("click", startListening);
+  if (micBtn) micBtn.addEventListener("click", startListening);
   $("island-close").addEventListener("click", hide);
   $("island-expand").addEventListener("click", () => window.zeno.overlayOpenMain());
 
